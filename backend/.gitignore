@@ -64,6 +64,9 @@ server.log
 storage/*.json
 ast.json
 
+# Cloned repositories
+repos/
+
 # macOS
 .DS_Store
 

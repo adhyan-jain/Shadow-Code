@@ -37,6 +37,23 @@ class GraphBuilder:
                 "readsFromDb": file.get("readsFromDb", False),
                 "writesToDb": file.get("writesToDb", False),
                 "inCycle": False,
+                # New metrics from enhanced parser
+                "lineCount": file.get("lineCount", 0),
+                "methodCount": file.get("methodCount", 0),
+                "classCount": file.get("classCount", 0),
+                "importCount": file.get("importCount", 0),
+                "fieldCount": file.get("fieldCount", 0),
+                "catchBlockCount": file.get("catchBlockCount", 0),
+                "staticMethodCount": file.get("staticMethodCount", 0),
+                "hasInheritance": file.get("hasInheritance", False),
+                "implementsInterfaces": file.get("implementsInterfaces", False),
+                "usesAnnotations": file.get("usesAnnotations", False),
+                "usesReflection": file.get("usesReflection", False),
+                "usesThreading": file.get("usesThreading", False),
+                "usesStreams": file.get("usesStreams", False),
+                "hasInnerClasses": file.get("hasInnerClasses", False),
+                "throwsExceptions": file.get("throwsExceptions", False),
+                "usesGenerics": file.get("usesGenerics", False),
             }
 
     def build_package_lookup(self):
@@ -115,6 +132,25 @@ class GraphBuilder:
                 "readsFromDb": node["readsFromDb"],
                 "writesToDb": node["writesToDb"],
                 "inCycle": node["inCycle"],
+                # New metrics
+                "lineCount": node["lineCount"],
+                "methodCount": node["methodCount"],
+                "classCount": node["classCount"],
+                "importCount": node["importCount"],
+                "fieldCount": node["fieldCount"],
+                "catchBlockCount": node["catchBlockCount"],
+                "staticMethodCount": node["staticMethodCount"],
+                "hasInheritance": node["hasInheritance"],
+                "implementsInterfaces": node["implementsInterfaces"],
+                "usesAnnotations": node["usesAnnotations"],
+                "usesReflection": node["usesReflection"],
+                "usesThreading": node["usesThreading"],
+                "usesStreams": node["usesStreams"],
+                "hasInnerClasses": node["hasInnerClasses"],
+                "throwsExceptions": node["throwsExceptions"],
+                "usesGenerics": node["usesGenerics"],
+                # Computed: coupling score = fanIn + fanOut
+                "couplingScore": fan_in[node_id] + fan_out[node_id],
             }
         return metrics
 
