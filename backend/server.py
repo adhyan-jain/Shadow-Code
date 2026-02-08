@@ -2,9 +2,44 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 import json
 import os
+import subprocess
+import sys
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend
+
+def initialize_data():
+    """Run graph_builder.py and risk_analyzer.py to generate JSON files"""
+    print('🔧 Initializing data...')
+    
+    storage_dir = os.path.join(os.path.dirname(__file__), 'storage')
+    os.makedirs(storage_dir, exist_ok=True)
+    
+    try:
+        # Run graph_builder.py
+        print('📊 Running graph_builder.py...')
+        graph_builder_path = os.path.join(os.path.dirname(__file__), 'graph_builder.py')
+        result = subprocess.run([sys.executable, graph_builder_path], 
+                              capture_output=True, text=True, check=True)
+        print(result.stdout)
+        
+        # Run risk_analyzer.py
+        print('📈 Running risk_analyzer.py...')
+        risk_analyzer_path = os.path.join(os.path.dirname(__file__), 'risk_analyzer.py')
+        result = subprocess.run([sys.executable, risk_analyzer_path], 
+                              capture_output=True, text=True, check=True)
+        print(result.stdout)
+        
+        print('✅ Data initialization complete!')
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f'❌ Error during initialization: {e}')
+        print(f'   stdout: {e.stdout}')
+        print(f'   stderr: {e.stderr}')
+        return False
+    except Exception as e:
+        print(f'❌ Unexpected error during initialization: {e}')
+        return False
 
 @app.route('/api/graph', methods=['GET'])
 def get_graph():
@@ -58,6 +93,11 @@ def get_metrics():
         return jsonify({'error': 'Failed to read metrics data'}), 500
 
 if __name__ == '__main__':
+    # Initialize data before starting the server
+    initialize_data()
+    if not initialize_data():
+        print('⚠️  Warning: Data initialization failed. Server will start but may not have data.')
+    
     print('🚀 Shadow-Code Backend running on http://localhost:3001')
     print('📊 Graph API: http://localhost:3001/api/graph')
     print('📈 Analysis API: http://localhost:3001/api/analysis')

@@ -1,4 +1,4 @@
-#!/home/adhyan/Desktop/Shadow-Code/backend/venv/bin/python
+#!/Users/vimalaadhityan/Docs/Dev/Shadow-Code/backend/venv/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys

@@ -123,7 +123,7 @@ if __name__ == "__main__":
     import os
     
     # Load AST data
-    ast_path = os.path.join(os.path.dirname(__file__), "..", "ast.json")
+    ast_path = os.path.join(os.path.dirname(__file__), ".", "ast.json")
     with open(ast_path, "r") as f:
         ast_data = json.load(f)
     
