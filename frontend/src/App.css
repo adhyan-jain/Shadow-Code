@@ -1,0 +1,95 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
+    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.App {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8fafc;
+}
+
+.header {
+  background-color: #1e293b;
+  color: white;
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header h1 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.stats {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+  font-size: 0.875rem;
+  color: #cbd5e1;
+}
+
+.legend {
+  display: flex;
+  gap: 1rem;
+  margin-left: auto;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.dot.green {
+  background-color: #4ade80;
+}
+
+.dot.yellow {
+  background-color: #fb923c;
+}
+
+.dot.red {
+  background-color: #ef4444;
+}
+
+.loading,
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 1rem;
+}
+
+.error {
+  color: #ef4444;
+}
+
+.error h2 {
+  font-size: 1.5rem;
+}
+
+.error p {
+  color: #64748b;
+  text-align: center;
+  max-width: 500px;
+}
