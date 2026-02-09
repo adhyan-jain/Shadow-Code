@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ParticlesBackground from "./components/particle_background";
 import { analyzeRepo } from "./api/api";
+import { clearMapCache } from "./map_page";
 
 const PIPELINE_STEPS = [
   { key: "clone", label: "Cloning repository" },
@@ -26,6 +27,9 @@ export default function HomePage() {
     setLoading(true);
     setError("");
     setPipelineStep(0);
+
+    // Clear any cached map state from previous session
+    clearMapCache();
 
     try {
       const result = await analyzeRepo(repoUrl.trim());

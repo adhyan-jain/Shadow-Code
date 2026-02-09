@@ -72,3 +72,56 @@ export async function fetchAnalysis(): Promise<Analysis> {
 
   return response.json();
 }
+
+export interface ConvertCodeResult {
+  success: boolean;
+  nodeId: string;
+  originalFile: string;
+  goFilename: string;
+  goCode: string;
+  javaSource: string;
+  targetLanguage: string;
+}
+
+/**
+ * Convert a Java file to Go or Kotlin
+ */
+export async function convertCode(
+  nodeId: string,
+  targetLanguage: "go" | "kotlin" = "go",
+): Promise<ConvertCodeResult> {
+  const response = await fetch(`${API_BASE_URL}/convert-code`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nodeId, targetLanguage }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Code conversion failed");
+  }
+
+  return data;
+}
+
+/**
+ * Fetch converted files for a project
+ */
+export async function getConvertedFiles(
+  projectId: string,
+): Promise<{
+  success: boolean;
+  projectId: string;
+  conversions: any[];
+  total: number;
+}> {
+  const response = await fetch(
+    `${API_BASE_URL}/project/${encodeURIComponent(projectId)}/converted-files`,
+  );
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || "Failed to fetch converted files");
+  }
+  return data;
+}

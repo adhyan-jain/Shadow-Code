@@ -9,10 +9,6 @@ export default function Comparison() {
   const [openPages, setOpenPages] = useState(true);
   const [activeFile, setActiveFile] = useState("/app/pages/index.tsx");
 
-  const handleNavigation = () => {
-    navigate("/conversion");
-  };
-
   return (
     <div className="min-h-screen bg-[#060C1E] flex relative">
       <div className="w-60 bg-black/30 border-r border-white/10 p-4 hidden md:flex flex-col">
@@ -43,9 +39,7 @@ export default function Comparison() {
                     (file, i) => (
                       <button
                         key={i}
-                        onClick={() =>
-                          setActiveFile(`/app/pages/${file}`)
-                        }
+                        onClick={() => setActiveFile(`/app/pages/${file}`)}
                         className={`block w-full text-left hover:text-white ${
                           activeFile === `/app/pages/${file}`
                             ? "text-white"
@@ -54,7 +48,7 @@ export default function Comparison() {
                       >
                         {file}
                       </button>
-                    )
+                    ),
                   )}
                 </div>
               )}
@@ -96,7 +90,7 @@ export default function Comparison() {
 
                 <div className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md shadow-lg overflow-hidden min-h-0">
                   <pre className="text-[10px] sm:text-[11px] md:text-xs text-white/90 font-mono whitespace-pre overflow-auto max-h-[560px]">
-{`import { db } from './database';
+                    {`import { db } from './database';
 import { hashPassword, verifyToken } from './utils';
 
 export class AuthService {
@@ -126,7 +120,7 @@ export class AuthService {
 
                 <div className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md shadow-lg overflow-hidden min-h-0">
                   <pre className="text-[10px] sm:text-[11px] md:text-xs text-white/90 font-mono whitespace-pre overflow-auto max-h-[560px]">
-{`from database import db
+                    {`from database import db
 from utils import hash_password, verify_token
 
 class AuthService:
@@ -147,16 +141,12 @@ class AuthService:
             </div>
           </div>
 
-          <div className="mt-auto pt-6 flex justify-between">
+          <div className="mt-auto pt-6 flex justify-start">
             <button
-              onClick={handleNavigation}
+              onClick={() => navigate("/map")}
               className="bg-[#10B981] px-4 py-2 rounded-lg font-medium hover:bg-[#0d9668]"
             >
-              Go Back
-            </button>
-
-            <button className="bg-[#10B981] px-4 py-2 rounded-lg font-medium hover:bg-[#0d9668]">
-              Go to Map
+              Back to Map
             </button>
           </div>
         </div>

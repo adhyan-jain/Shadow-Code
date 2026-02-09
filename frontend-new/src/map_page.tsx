@@ -1,34 +1,165 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import ParticlesBackground from "./components/particle_background";
 import Graph from "./components/Graph";
+import Toast from "./components/Toast";
+import { convertCode, getConvertedFiles } from "./api/api";
 import SearchIcon from "./assets/search.svg";
 import Logo from "./assets/logo.svg";
+
+// ─── Session-level cache ────────────────────────────────────
+// Survives navigation but clears on full page refresh / new tab.
+let cachedGraph: any = null;
+let cachedAnalysis: any = null;
+let cachedRepoUrl: string = "";
+let cachedTargetLanguage: "go" | "kotlin" | "" = "";
+let cachedLanguageLocked: boolean = false;
+let cachedConvertedCount: number = 0;
+
+export function clearMapCache() {
+  cachedGraph = null;
+  cachedAnalysis = null;
+  cachedRepoUrl = "";
+  cachedTargetLanguage = "";
+  cachedLanguageLocked = false;
+  cachedConvertedCount = 0;
+}
 
 export default function MapPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { graph, analysis, repoUrl } = location.state || {};
+
+  // Hydrate from navigation state (fresh analysis) or cache (returning)
+  const incoming = location.state as any;
+  const graph = incoming?.graph ?? cachedGraph;
+  const analysis = incoming?.analysis ?? cachedAnalysis;
+  const repoUrl = incoming?.repoUrl ?? cachedRepoUrl;
+
+  // Persist to cache whenever we have data
+  useEffect(() => {
+    if (graph && analysis) {
+      cachedGraph = graph;
+      cachedAnalysis = analysis;
+      cachedRepoUrl = repoUrl;
+    }
+  }, [graph, analysis, repoUrl]);
+
+  // If fresh analysis came in (from home), reset language lock + converted count
+  useEffect(() => {
+    if (incoming?.graph) {
+      cachedTargetLanguage = "";
+      cachedLanguageLocked = false;
+      cachedConvertedCount = 0;
+      setTargetLanguage("");
+      setLanguageLocked(false);
+      setConvertedCount(0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [incoming?.graph]);
+
   const [searchTerm, setSearchTerm] = useState("");
+  const [targetLanguage, setTargetLanguage] = useState<"go" | "kotlin" | "">(
+    cachedTargetLanguage,
+  );
+  const [languageLocked, setLanguageLocked] = useState(cachedLanguageLocked);
+  const [convertedCount, setConvertedCount] = useState(cachedConvertedCount);
+  const [converting, setConverting] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+
+  // On mount, check backend for existing converted files
+  useEffect(() => {
+    if (!analysis) return;
+    // Derive project id the same way the backend does
+    const anyFilePath: string = Object.values(analysis).find(
+      (v: any) => v.filePath,
+    )
+      ? (Object.values(analysis).find((v: any) => v.filePath) as any).filePath
+      : "";
+    if (!anyFilePath || !anyFilePath.includes("/repos/")) return;
+    const projectId = anyFilePath.split("/repos/")[1]?.split("/")[0];
+    if (!projectId) return;
+
+    getConvertedFiles(projectId)
+      .then((data) => {
+        if (data.total > 0) {
+          setConvertedCount(data.total);
+          cachedConvertedCount = data.total;
+          // If conversions exist, lock the language
+          const lang = data.conversions[0]?.target_language?.toLowerCase();
+          if (lang === "go" || lang === "kotlin") {
+            setTargetLanguage(lang);
+            setLanguageLocked(true);
+            cachedTargetLanguage = lang;
+            cachedLanguageLocked = true;
+          }
+        }
+      })
+      .catch(() => {
+        /* ignore — first time */
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [analysis]);
 
   // Filter logic
   const filteredGraph = {
-    nodes: graph?.nodes.filter((node: any) =>
-      !searchTerm ||
-      node.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (node.classNames?.[0] && node.classNames[0].toLowerCase().includes(searchTerm.toLowerCase()))
-    ) || [],
-    edges: graph?.edges.filter((edge: any) => {
-      // Only include edges where both source/target are in filtered nodes
-      const nodeIds = new Set(graph.nodes
-        .filter((node: any) => !searchTerm || node.id.toLowerCase().includes(searchTerm.toLowerCase()) || (node.classNames?.[0] && node.classNames[0].toLowerCase().includes(searchTerm.toLowerCase())))
-        .map((n: any) => n.id));
-      return nodeIds.has(edge.from) && nodeIds.has(edge.to);
-    }) || []
+    nodes:
+      graph?.nodes.filter(
+        (node: any) =>
+          !searchTerm ||
+          node.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (node.classNames?.[0] &&
+            node.classNames[0]
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase())),
+      ) || [],
+    edges:
+      graph?.edges.filter((edge: any) => {
+        const nodeIds = new Set(
+          graph.nodes
+            .filter(
+              (node: any) =>
+                !searchTerm ||
+                node.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (node.classNames?.[0] &&
+                  node.classNames[0]
+                    .toLowerCase()
+                    .includes(searchTerm.toLowerCase())),
+            )
+            .map((n: any) => n.id),
+        );
+        return nodeIds.has(edge.from) && nodeIds.has(edge.to);
+      }) || [],
   };
 
-  const handleConvert = (nodeId: string) => {
-    navigate("/convertfiles", { state: { graph, analysis, repoUrl, selectedId: nodeId } });
+  // ─── Inline conversion (no page navigation) ──────────────
+  const handleConvert = async (nodeId: string) => {
+    if (!targetLanguage) {
+      setToastMessage("Select a target language first.");
+      setShowToast(true);
+      return;
+    }
+    setConverting(true);
+    try {
+      await convertCode(nodeId, targetLanguage);
+      const newCount = convertedCount + 1;
+      setConvertedCount(newCount);
+      cachedConvertedCount = newCount;
+      // Lock language after first successful conversion
+      if (!languageLocked) {
+        setLanguageLocked(true);
+        cachedLanguageLocked = true;
+        cachedTargetLanguage = targetLanguage;
+      }
+      setToastMessage("File successfully converted");
+      setShowToast(true);
+    } catch (err) {
+      console.error("Conversion failed:", err);
+      setToastMessage(err instanceof Error ? err.message : "Conversion failed");
+      setShowToast(true);
+    } finally {
+      setConverting(false);
+    }
   };
 
   if (!graph || !analysis) {
@@ -55,9 +186,7 @@ export default function MapPage() {
     return nodeAnalysis && nodeAnalysis.classification === "GREEN";
   }).length;
 
-  // Filter nodes for search (Graph component might need to handle this or we filter data passed to it)
-  // For now, we'll just pass all data as the Graph component in old frontend didn't have search prop.
-  // We can implement search later if needed or if Graph component supports it.
+  const hasConvertedFiles = convertedCount > 0;
 
   return (
     <div className="min-h-screen bg-[#060C1E] flex text-white relative">
@@ -71,7 +200,10 @@ export default function MapPage() {
                 Risk <span className="text-[#10B981]">Analysis Map</span>
               </h1>
             </div>
-            <p className="mt-1 text-sm text-gray-400 font-primary truncate" title={repoUrl}>
+            <p
+              className="mt-1 text-sm text-gray-400 font-primary truncate"
+              title={repoUrl}
+            >
               {repoUrl || "Repository"}
             </p>
           </div>
@@ -88,7 +220,7 @@ export default function MapPage() {
             </div>
           </div>
 
-          <div className="text-sm space-y-2">
+          <div className="text-sm space-y-2 mb-8">
             <div className="flex justify-between">
               <span className="text-gray-400">Total Files</span>
               <span>{totalFiles}</span>
@@ -98,11 +230,40 @@ export default function MapPage() {
               <span className="text-[#10B981]">{safeFiles}</span>
             </div>
           </div>
+
+          {/* ─── Target Language Dropdown ──────────────── */}
+          <div className="border-t border-white/10 pt-6">
+            <label className="block text-xs text-gray-400 uppercase tracking-wider mb-2">
+              Target Language
+            </label>
+            <select
+              value={targetLanguage}
+              onChange={(e) => {
+                const val = e.target.value as "go" | "kotlin" | "";
+                setTargetLanguage(val);
+                cachedTargetLanguage = val;
+              }}
+              disabled={languageLocked}
+              className={`w-full rounded-lg border px-3 py-2 text-sm bg-[#0B1227] focus:outline-none focus:ring-2 focus:ring-[#10B981] ${
+                languageLocked
+                  ? "border-white/5 text-gray-500 cursor-not-allowed opacity-60"
+                  : "border-white/10 text-white"
+              }`}
+            >
+              <option value="">Select…</option>
+              <option value="go">Go</option>
+              <option value="kotlin">Kotlin</option>
+            </select>
+            {languageLocked && (
+              <p className="mt-2 text-xs text-yellow-500/80">
+                Language locked. Reparse repo to change.
+              </p>
+            )}
+          </div>
         </aside>
 
         <main className="flex-1 relative flex flex-col">
           <div className="absolute top-6 left-1/2 -translate-x-1/2 z-10 lg:w-[700px] md:w-[450px] sm:w-[300px]">
-            {/* Search bar - functional or just visual for now since Graph handles rendering */}
             <div className="relative">
               <img
                 src={SearchIcon}
@@ -118,26 +279,48 @@ export default function MapPage() {
             </div>
           </div>
 
+          {/* Converting overlay */}
+          {converting && (
+            <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+              <div className="text-lg font-secondary text-[#10B981] animate-pulse">
+                Converting…
+              </div>
+            </div>
+          )}
+
           <div className="flex-1 h-full w-full overflow-hidden">
-            <Graph graph={filteredGraph} analysis={analysis} onConvert={handleConvert} />
+            <Graph
+              graph={filteredGraph}
+              analysis={analysis}
+              onConvert={handleConvert}
+            />
           </div>
 
-          <div className="absolute bottom-6 right-6">
-            <button
-              onClick={() => navigate("/convertfiles", { state: { graph, analysis, repoUrl } })}
-              className="px-6 py-3 rounded-xl bg-[#10B981] text-black font-secondary hover:bg-[#0ea472] transition"
-            >
-              View Safe Files
-            </button>
-          </div>
-          <div className="absolute bottom-6 left-6">
+          {/* Bottom-left buttons */}
+          <div className="absolute bottom-6 left-6 flex gap-3">
             <button
               onClick={() => navigate("/")}
               className="px-8 py-3 rounded-xl bg-[#10B981] text-black font-secondary hover:brightness-110 transition"
             >
               Go Back
             </button>
+            <button
+              onClick={() => hasConvertedFiles && navigate("/comparison")}
+              disabled={!hasConvertedFiles}
+              className={`px-6 py-3 rounded-xl font-secondary transition ${
+                hasConvertedFiles
+                  ? "bg-[#10B981] text-black hover:bg-[#0ea472]"
+                  : "bg-gray-600 text-gray-400 cursor-not-allowed"
+              }`}
+            >
+              Converted Files
+            </button>
           </div>
+
+          {/* Toast */}
+          {showToast && (
+            <Toast message={toastMessage} onClose={() => setShowToast(false)} />
+          )}
         </main>
       </div>
     </div>
