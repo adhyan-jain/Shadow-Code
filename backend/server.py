@@ -7,6 +7,17 @@ import sys
 import shutil
 import uuid
 
+from backboard_client import (
+    build_backboard_message,
+    send_to_backboard,
+    extract_verdict,
+)
+from gemini_client import convert_java_to_go
+
+# Load .env file if present
+from dotenv import load_dotenv
+load_dotenv()
+
 app = Flask(__name__)
 CORS(app)
 
@@ -209,13 +220,229 @@ def get_green():
         print(f"Error reading greens: {e}")
         return jsonify({'error': 'Failed to read greens data'}), 500
 
+
+@app.route('/api/migrate', methods=['POST'])
+def migrate_node():
+    """
+    Send a node to Backboard's ShadowArchitect for migration verdict.
+    Expects JSON body: { "nodeId": "file_0" }
+    Optionally include source code with: { "nodeId": "file_0", "includeSource": true }
+    """
+    data = request.get_json()
+    if not data or 'nodeId' not in data:
+        return jsonify({'error': 'Missing nodeId in request body'}), 400
+
+    node_id = data['nodeId']
+    include_source = data.get('includeSource', False)
+
+    try:
+        # Load analysis and graph
+        analysis_path = os.path.join(STORAGE_DIR, 'analysis.json')
+        graph_path = os.path.join(STORAGE_DIR, 'graph.json')
+
+        if not os.path.exists(analysis_path) or not os.path.exists(graph_path):
+            return jsonify({'error': 'Analysis data not found. Run /api/analyze first.'}), 404
+
+        with open(analysis_path, 'r') as f:
+            analysis = json.load(f)
+        with open(graph_path, 'r') as f:
+            graph = json.load(f)
+
+        if node_id not in analysis:
+            return jsonify({'error': f'Node {node_id} not found in analysis'}), 404
+
+        node_analysis = analysis[node_id]
+
+        # Optionally read source code from cloned repo
+        source_code = None
+        if include_source:
+            file_path = node_analysis.get('filePath', '')
+            if file_path and os.path.exists(file_path):
+                try:
+                    with open(file_path, 'r') as f:
+                        source_code = f.read()
+                except Exception:
+                    source_code = None
+
+        # Build the structured message
+        message = build_backboard_message(node_id, node_analysis, graph, source_code)
+
+        # Send to Backboard
+        print(f'🤖 Sending node {node_id} ({node_analysis.get("filePath", "")}) to Backboard...')
+        raw_response = send_to_backboard(message)
+
+        # Parse verdict
+        parsed = extract_verdict(raw_response)
+
+        return jsonify({
+            'success': True,
+            'nodeId': node_id,
+            'filePath': node_analysis.get('filePath', ''),
+            'classification': node_analysis.get('classification', ''),
+            'verdict': parsed['verdict'],
+            'response': parsed['fullResponse'],
+            'riskScore': node_analysis.get('riskScore', 0),
+            'convertibilityScore': node_analysis.get('convertibilityScore', 0),
+        })
+
+    except ValueError as e:
+        print(f'❌ Config error: {e}')
+        return jsonify({'error': str(e)}), 500
+    except RuntimeError as e:
+        print(f'❌ Backboard API error: {e}')
+        return jsonify({'error': f'Backboard API error: {str(e)}'}), 502
+    except Exception as e:
+        print(f'❌ Migration error: {e}')
+        return jsonify({'error': f'Migration failed: {str(e)}'}), 500
+
+
+@app.route('/api/migrate/batch', methods=['POST'])
+def migrate_batch():
+    """
+    Send all GREEN nodes to Backboard for migration verdicts.
+    No body required — uses stored analysis data.
+    """
+    try:
+        analysis_path = os.path.join(STORAGE_DIR, 'analysis.json')
+        graph_path = os.path.join(STORAGE_DIR, 'graph.json')
+
+        if not os.path.exists(analysis_path) or not os.path.exists(graph_path):
+            return jsonify({'error': 'Analysis data not found. Run /api/analyze first.'}), 404
+
+        with open(analysis_path, 'r') as f:
+            analysis = json.load(f)
+        with open(graph_path, 'r') as f:
+            graph = json.load(f)
+
+        green_nodes = get_green_nodes(analysis)
+
+        if not green_nodes:
+            return jsonify({
+                'success': True,
+                'message': 'No GREEN nodes found for migration',
+                'results': []
+            })
+
+        results = []
+        for node_id, node_analysis in green_nodes.items():
+            try:
+                message = build_backboard_message(node_id, node_analysis, graph)
+                print(f'🤖 [{node_id}] Sending to Backboard...')
+                raw_response = send_to_backboard(message)
+                parsed = extract_verdict(raw_response)
+
+                results.append({
+                    'nodeId': node_id,
+                    'filePath': node_analysis.get('filePath', ''),
+                    'verdict': parsed['verdict'],
+                    'response': parsed['fullResponse'],
+                })
+            except Exception as e:
+                results.append({
+                    'nodeId': node_id,
+                    'filePath': node_analysis.get('filePath', ''),
+                    'verdict': 'ERROR',
+                    'response': str(e),
+                })
+
+        return jsonify({
+            'success': True,
+            'total': len(green_nodes),
+            'results': results,
+        })
+
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 500
+    except Exception as e:
+        return jsonify({'error': f'Batch migration failed: {str(e)}'}), 500
+
+
+@app.route('/api/convert-code', methods=['POST'])
+def convert_code():
+    """
+    Convert a Java file to Go using Gemini.
+    Expects JSON body: { "nodeId": "file_0" }
+    Should only be called after Backboard verdict is YES and user confirms.
+    """
+    data = request.get_json()
+    if not data or 'nodeId' not in data:
+        return jsonify({'error': 'Missing nodeId in request body'}), 400
+
+    node_id = data['nodeId']
+
+    try:
+        analysis_path = os.path.join(STORAGE_DIR, 'analysis.json')
+        if not os.path.exists(analysis_path):
+            return jsonify({'error': 'Analysis data not found. Run /api/analyze first.'}), 404
+
+        with open(analysis_path, 'r') as f:
+            analysis = json.load(f)
+
+        if node_id not in analysis:
+            return jsonify({'error': f'Node {node_id} not found in analysis'}), 404
+
+        node_analysis = analysis[node_id]
+        file_path = node_analysis.get('filePath', '')
+
+        if not file_path or not os.path.exists(file_path):
+            return jsonify({'error': f'Source file not found: {file_path}'}), 404
+
+        with open(file_path, 'r') as f:
+            source_code = f.read()
+
+        if not source_code.strip():
+            return jsonify({'error': 'Source file is empty'}), 400
+
+        print(f'🔄 Converting {file_path} (node {node_id}) Java → Go via Gemini...')
+        go_code = convert_java_to_go(source_code, node_analysis, file_path)
+
+        # Derive the output filename
+        original_name = os.path.basename(file_path)
+        go_filename = original_name.replace('.java', '.go').lower()
+
+        return jsonify({
+            'success': True,
+            'nodeId': node_id,
+            'originalFile': file_path,
+            'goFilename': go_filename,
+            'goCode': go_code,
+            'javaSource': source_code,
+        })
+
+    except ValueError as e:
+        print(f'❌ Config error: {e}')
+        return jsonify({'error': str(e)}), 500
+    except RuntimeError as e:
+        print(f'❌ Gemini API error: {e}')
+        return jsonify({'error': f'Gemini API error: {str(e)}'}), 502
+    except Exception as e:
+        print(f'❌ Conversion error: {e}')
+        return jsonify({'error': f'Conversion failed: {str(e)}'}), 500
+
+
 if __name__ == '__main__':
     os.makedirs(REPOS_DIR, exist_ok=True)
     os.makedirs(STORAGE_DIR, exist_ok=True)
 
+    # Check Backboard config
+    bb_configured = all([
+        os.environ.get('BACKBOARD_API_KEY'),
+        os.environ.get('BACKBOARD_THREAD_ID'),
+        os.environ.get('BACKBOARD_ASSISTANT_ID'),
+    ])
+
     print('🚀 Shadow-Code Backend running on http://localhost:3001')
-    print('📡 POST /api/analyze  — { "repoUrl": "..." }')
+    print('📡 POST /api/analyze        — { "repoUrl": "..." }')
     print('📊 GET  /api/graph')
     print('📈 GET  /api/analysis')
     print('📋 GET  /api/metrics')
+    print('🟢 GET  /api/convert        — GREEN nodes only')
+    print('🤖 POST /api/migrate        — { "nodeId": "..." }')
+    print('🤖 POST /api/migrate/batch  — All GREEN nodes')
+    print('🔄 POST /api/convert-code   — { "nodeId": "..." } (Gemini Java→Go)')
+    print(f'🔑 Backboard: {"✅ configured" if bb_configured else "❌ NOT configured (set env vars)"}')
+
+    gemini_configured = bool(os.environ.get('GEMINI_API_KEY'))
+    print(f'🔑 Gemini: {"✅ configured" if gemini_configured else "❌ NOT configured (set GEMINI_API_KEY)"}')
+
     app.run(host='0.0.0.0', port=3001, debug=True)
