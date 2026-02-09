@@ -122,9 +122,21 @@ def _get_project_id_from_analysis():
 
 
 def _record_conversion(node_id, original_file, converted_filename, target_language, converted_code):
-    """Append a conversion record to the project's conversion registry."""
+    """Append a conversion record to the project's conversion registry and persist file to disk."""
     project_id = _get_project_id_from_analysis()
     registry_path = os.path.join(STORAGE_DIR, f'{project_id}_conversions.json')
+    
+    # Persist converted file to disk
+    converted_files_dir = os.path.join(BASE_DIR, 'converted_files', project_id)
+    os.makedirs(converted_files_dir, exist_ok=True)
+    
+    converted_file_path = os.path.join(converted_files_dir, converted_filename)
+    try:
+        with open(converted_file_path, 'w') as f:
+            f.write(converted_code)
+        print(f'💾 Persisted converted file: {converted_file_path}')
+    except Exception as e:
+        print(f'⚠️  Warning: Failed to persist converted file: {e}')
 
     records = []
     if os.path.exists(registry_path):
@@ -138,6 +150,7 @@ def _record_conversion(node_id, original_file, converted_filename, target_langua
         'node_id': node_id,
         'original_file': original_file,
         'converted_file': converted_filename,
+        'converted_file_path': converted_file_path,
         'target_language': target_language,
         'converted_at': datetime.now(timezone.utc).isoformat(),
         'converted_code': converted_code,
@@ -147,6 +160,45 @@ def _record_conversion(node_id, original_file, converted_filename, target_langua
         json.dump(records, f, indent=2)
 
     print(f'📝 Recorded conversion: {original_file} → {converted_filename} ({target_language})')
+
+
+def _get_locked_language():
+    """Return the locked target language for the current project, or None."""
+    project_id = _get_project_id_from_analysis()
+    lock_path = os.path.join(STORAGE_DIR, f'{project_id}_language.json')
+    if os.path.exists(lock_path):
+        try:
+            with open(lock_path, 'r') as f:
+                data = json.load(f)
+            return data.get('language')
+        except Exception:
+            pass
+    return None
+
+
+def _set_locked_language(language):
+    """Persist the target language for the current project."""
+    project_id = _get_project_id_from_analysis()
+    lock_path = os.path.join(STORAGE_DIR, f'{project_id}_language.json')
+    with open(lock_path, 'w') as f:
+        json.dump({'language': language, 'locked_at': datetime.now(timezone.utc).isoformat()}, f, indent=2)
+    print(f'🔒 Language locked to {language} for project {project_id}')
+
+
+def _clear_project_conversions():
+    """Remove conversion registry and language lock for the current project (called on reparse)."""
+    project_id = _get_project_id_from_analysis()
+    if project_id == 'unknown':
+        return
+    for fname in [f'{project_id}_conversions.json', f'{project_id}_language.json']:
+        fpath = os.path.join(STORAGE_DIR, fname)
+        if os.path.exists(fpath):
+            os.remove(fpath)
+            print(f'🗑️  Cleared {fname}')
+    conv_dir = os.path.join(BASE_DIR, 'converted_files', project_id)
+    if os.path.isdir(conv_dir):
+        shutil.rmtree(conv_dir, onerror=remove_readonly)
+        print(f'🗑️  Cleared converted_files/{project_id}')
 
 
 def clone_repo(repo_url):
@@ -235,6 +287,9 @@ def analyze_repo():
         return jsonify({'error': 'repoUrl cannot be empty'}), 400
 
     try:
+        # Clear previous conversions & language lock before re-analysis
+        _clear_project_conversions()
+
         # Step 1: Clone
         repo_path = clone_repo(repo_url)
 
@@ -520,6 +575,13 @@ def convert_code():
     if target_language not in ('go', 'kotlin'):
         return jsonify({'error': f'Unsupported target language: {target_language}. Use "go" or "kotlin".'}), 400
 
+    # Language lock enforcement
+    locked = _get_locked_language()
+    if locked and locked != target_language:
+        return jsonify({
+            'error': f'Language is locked to "{locked}". Reparse the repo to change target language.'
+        }), 409
+
     try:
         analysis_path = os.path.join(STORAGE_DIR, 'analysis.json')
         if not os.path.exists(analysis_path):
@@ -568,6 +630,10 @@ def convert_code():
 
         # Record the conversion
         _record_conversion(node_id, file_path, out_filename, lang_label, converted_code)
+
+        # Lock language on first conversion
+        if not _get_locked_language():
+            _set_locked_language(target_language)
 
         return jsonify({
             'success': True,
