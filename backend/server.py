@@ -7,6 +7,7 @@ import sys
 import shutil
 import stat
 import uuid
+from pathlib import Path
 
 from backboard_client import (
     build_backboard_message,
@@ -106,20 +107,26 @@ def _get_project_id_from_analysis():
     analysis_path = os.path.join(STORAGE_DIR, 'analysis.json')
     if not os.path.exists(analysis_path):
         return 'unknown'
+
     try:
         with open(analysis_path, 'r') as f:
             analysis = json.load(f)
+
         # Grab any filePath and extract the repo directory name
         for v in analysis.values():
             fp = v.get('filePath', '')
-            if '/repos/' in fp:
-                parts = fp.split('/repos/')
-                if len(parts) > 1:
-                    return parts[1].split('/')[0]
+            if not fp:
+                continue
+
+            parts = Path(fp).parts  # OS-independent split
+            if 'repos' in parts:
+                idx = parts.index('repos')
+                if idx + 1 < len(parts):
+                    return parts[idx + 1]
+
         return 'unknown'
     except Exception:
         return 'unknown'
-
 
 def _record_conversion(node_id, original_file, converted_filename, target_language, converted_code):
     """Append a conversion record to the project's conversion registry and persist file to disk."""
@@ -576,11 +583,11 @@ def convert_code():
         return jsonify({'error': f'Unsupported target language: {target_language}. Use "go" or "kotlin".'}), 400
 
     # Language lock enforcement
-    locked = _get_locked_language()
-    if locked and locked != target_language:
-        return jsonify({
-            'error': f'Language is locked to "{locked}". Reparse the repo to change target language.'
-        }), 409
+    # locked = _get_locked_language()
+    # if locked and locked != target_language:
+    #     return jsonify({
+    #         'error': f'Language is locked to "{locked}". Reparse the repo to change target language.'
+    #     }), 409
 
     try:
         analysis_path = os.path.join(STORAGE_DIR, 'analysis.json')
@@ -629,6 +636,8 @@ def convert_code():
                 converted_code = convert_java_to_go(source_code, node_analysis, file_path)
 
         # Record the conversion
+        # Use provided project_id or derive it
+        final_project_id = data.get('projectId') or _get_project_id_from_analysis()
         _record_conversion(node_id, file_path, out_filename, lang_label, converted_code)
 
         # Lock language on first conversion
