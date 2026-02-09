@@ -27,9 +27,10 @@ interface GraphProps {
     edges: GraphEdge[];
   };
   analysis: Record<string, AnalysisData>;
+  onConvert?: (nodeId: string) => void;
 }
 
-const Graph: React.FC<GraphProps> = ({ graph, analysis }) => {
+const Graph: React.FC<GraphProps> = ({ graph, analysis, onConvert }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
@@ -54,7 +55,7 @@ const Graph: React.FC<GraphProps> = ({ graph, analysis }) => {
       ...node,
       classification: analysis[node.id]?.classification || 'GREEN'
     }));
-    
+
 
 
     const links = graph.edges.map(edge => ({
@@ -75,10 +76,13 @@ const Graph: React.FC<GraphProps> = ({ graph, analysis }) => {
 
     // Setup simulation
     const simulation = d3.forceSimulation(nodes as any)
-      .force("link", d3.forceLink(links).id((d: any) => d.id).distance(100))
-      .force("charge", d3.forceManyBody().strength(-300))
+      .force("link", d3.forceLink(links).id((d: any) => d.id).distance(150)) // Increased distance
+      .force("charge", d3.forceManyBody().strength(-500)) // Increased repulsion
       .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collide", d3.forceCollide().radius(30));
+      .force("collide", d3.forceCollide().radius(50).iterations(2)) // Increased collision radius
+      // Add a weak centering force to keep independent nodes from drifting too far
+      .force("x", d3.forceX(width / 2).strength(0.05))
+      .force("y", d3.forceY(height / 2).strength(0.05));
 
     const svg = d3.select(svgRef.current)
       .attr("width", width)
@@ -151,28 +155,28 @@ const Graph: React.FC<GraphProps> = ({ graph, analysis }) => {
       .style("pointer-events", "none");
 
     // Hover interactions
-    node.on("mouseover", function(_event, d: any) {
+    node.on("mouseover", function (_event, d: any) {
       node.style("opacity", (o: any) => isConnected(d, o) ? 1 : 0.1);
       link.style("opacity", (o: any) => (o.source.id === d.id || o.target.id === d.id) ? 1 : 0.1);
       d3.select(this).select("circle").attr("stroke", "#fff").attr("stroke-width", 3);
     })
-    .on("mouseout", function() {
-      node.style("opacity", 1);
-      link.style("opacity", 1);
-      d3.select(this).select("circle").attr("stroke", "#fff").attr("stroke-width", 1.5);
-    });
+      .on("mouseout", function () {
+        node.style("opacity", 1);
+        link.style("opacity", 1);
+        d3.select(this).select("circle").attr("stroke", "#fff").attr("stroke-width", 1.5);
+      });
 
     // Click interaction
     node.on("click", (event, d: any) => {
       setSelectedNode(selectedNode === d.id ? null : d.id);
       event.stopPropagation(); // Prevent bg click from deselecting immediately if we add that logic
     });
-    
+
     // Background click to deselect
     svg.on("click", (event) => {
-        if (event.target === svgRef.current) {
-            setSelectedNode(null);
-        }
+      if (event.target === svgRef.current) {
+        setSelectedNode(null);
+      }
     });
 
     simulation.on("tick", () => {
@@ -212,6 +216,13 @@ const Graph: React.FC<GraphProps> = ({ graph, analysis }) => {
   const selectedNodeData = selectedNode ? graph.nodes.find(n => n.id === selectedNode) : null;
   const selectedAnalysis = selectedNode ? analysis[selectedNode] : null;
 
+  // Helper to format keys
+  const formatKey = (key: string) => {
+    return key
+      .replace(/([A-Z])/g, ' $1') // insert space before capital letters
+      .replace(/^./, str => str.toUpperCase()); // maximize first letter
+  };
+
   return (
     <div className="relative w-full h-full flex overflow-hidden">
       <div ref={wrapperRef} className="flex-1 w-full h-full">
@@ -220,67 +231,139 @@ const Graph: React.FC<GraphProps> = ({ graph, analysis }) => {
 
       {/* Sidebar Overlay */}
       {selectedNode && (
-        <div className="absolute top-0 right-0 h-full w-80 bg-[#0B1227]/95 backdrop-blur-md border-l border-white/10 shadow-2xl transform transition-transform duration-300 ease-in-out p-6 overflow-y-auto z-20">
-            <div className="flex justify-between items-start mb-6">
-                <h2 className="text-xl font-semibold text-white truncate pr-4" title={selectedNode}>
-                    {selectedNodeData?.classNames?.[0] || selectedNode}
-                </h2>
-                <button 
-                  onClick={() => setSelectedNode(null)}
-                  className="text-gray-400 hover:text-white transition"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+        <div className="absolute top-0 right-0 h-full w-96 bg-[#0B1227]/95 backdrop-blur-md border-l border-white/10 shadow-2xl transform transition-transform duration-300 ease-in-out p-6 overflow-y-auto z-20">
+          <div className="flex justify-between items-start mb-6">
+            <h2 className="text-xl font-semibold text-white truncate pr-4" title={selectedNode}>
+              {selectedNodeData?.classNames?.[0] || selectedNode}
+            </h2>
+            <button
+              onClick={() => setSelectedNode(null)}
+              className="text-gray-400 hover:text-white transition"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="space-y-6">
+            {/* Classification Badge */}
+            <div>
+              <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Risk Level</h3>
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${selectedAnalysis?.classification === 'GREEN' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                selectedAnalysis?.classification === 'YELLOW' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
+                  'bg-red-500/10 text-red-400 border-red-500/20'
+                }`}>
+                {selectedAnalysis?.classification || 'UNKNOWN'}
+              </span>
             </div>
 
-            <div className="space-y-6">
-                {/* Classification Badge */}
-                <div>
-                   <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Risk Level</h3>
-                   <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${
-                       selectedAnalysis?.classification === 'GREEN' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                       selectedAnalysis?.classification === 'YELLOW' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
-                       'bg-red-500/10 text-red-400 border-red-500/20'
-                   }`}>
-                       {selectedAnalysis?.classification || 'UNKNOWN'}
-                   </span>
+            {selectedAnalysis?.riskScore !== undefined && (
+              <div>
+                <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Risk Score</h3>
+                <div className="w-full bg-gray-700/50 rounded-full h-2">
+                  <div
+                    className={`h-2 rounded-full ${selectedAnalysis.riskScore < 30 ? 'bg-green-500' :
+                      selectedAnalysis.riskScore < 70 ? 'bg-yellow-500' : 'bg-red-500'
+                      }`}
+                    style={{ width: `${Math.min(selectedAnalysis.riskScore, 100)}%` }}
+                  ></div>
                 </div>
+                <div className="text-right text-xs text-gray-400 mt-1">{selectedAnalysis.riskScore}/100</div>
+              </div>
+            )}
 
-                 {selectedAnalysis?.riskScore !== undefined && (
-                    <div>
-                        <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Risk Score</h3>
-                         <div className="w-full bg-gray-700/50 rounded-full h-2">
-                            <div 
-                                className={`h-2 rounded-full ${
-                                    selectedAnalysis.riskScore < 30 ? 'bg-green-500' : 
-                                    selectedAnalysis.riskScore < 70 ? 'bg-yellow-500' : 'bg-red-500'
-                                }`}
-                                style={{ width: `${Math.min(selectedAnalysis.riskScore, 100)}%` }}
-                            ></div>
-                         </div>
-                         <div className="text-right text-xs text-gray-400 mt-1">{selectedAnalysis.riskScore}/100</div>
-                    </div>
-                )}
+            {selectedAnalysis?.explanation && (
+              <div>
+                <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Details</h3>
+                <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">
+                  {selectedAnalysis.explanation}
+                </p>
+              </div>
+            )}
 
-                {selectedAnalysis?.explanation && (
-                    <div>
-                        <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Details</h3>
-                        <p className="text-sm text-gray-300 leading-relaxed">
-                            {selectedAnalysis.explanation}
-                        </p>
+            {/* Refined Sidebar Details */}
+            <div className="space-y-4 pt-4 border-t border-white/10 mt-6 mb-20">
+              <h3 className="text-sm font-semibold text-white mb-4">Properties</h3>
+
+              {/* Node ID */}
+              <div className="group">
+                <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Node ID</div>
+                <div className="text-sm text-gray-200 break-all bg-black/20 p-2 rounded border border-white/5 select-all">{selectedNode}</div>
+              </div>
+
+              {/* Direct Analysis Properties */}
+              {selectedAnalysis && (
+                <>
+                  {/* Risk Score & Complexity */}
+                  {['riskScore', 'complexityScore'].map(key => {
+                    const value = selectedAnalysis[key];
+                    if (value === undefined || value === null) return null;
+                    return (
+                      <div key={key} className="group">
+                        <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{formatKey(key)}</div>
+                        <div className="text-sm text-gray-200 break-words bg-black/20 p-2 rounded border border-white/5">
+                          {String(value)}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Blast Radius (Object Handling) */}
+                  {selectedAnalysis.blastRadius && typeof selectedAnalysis.blastRadius === 'object' && (
+                    <div className="group">
+                      <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Blast Radius</div>
+                      <div className="bg-black/20 p-2 rounded border border-white/5 space-y-2">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-400">Affected Nodes:</span>
+                          <span className="text-gray-200">{selectedAnalysis.blastRadius.affectedNodes}</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-400">Total Nodes:</span>
+                          <span className="text-gray-200">{selectedAnalysis.blastRadius.totalNodes}</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-400">Impact:</span>
+                          <span className="text-[#EF4444] font-medium">{selectedAnalysis.blastRadius.percentage}%</span>
+                        </div>
+                      </div>
                     </div>
-                )}
-                
-                {/* Could add incoming/outgoing edges list here if needed */}
-                 <div>
-                    <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Technical ID</h3>
-                    <code className="block bg-black/30 p-2 rounded text-xs text-gray-400 break-all">
-                        {selectedNode}
-                    </code>
-                </div>
+                  )}
+
+                  {/* Metrics Object - flatten and exclude filePath */}
+                  {selectedAnalysis.metrics && typeof selectedAnalysis.metrics === 'object' && (
+                    Object.entries(selectedAnalysis.metrics)
+                      .filter(([key]) => key !== 'filePath')
+                      .map(([key, value]) => (
+                        <div key={`metric-${key}`} className="group">
+                          <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{formatKey(key)}</div>
+                          <div className="text-sm text-gray-200 break-words bg-black/20 p-2 rounded border border-white/5">
+                            {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                          </div>
+                        </div>
+                      ))
+                  )}
+                </>
+              )}
             </div>
+
+            <div className="border-t border-white/10 pt-4 mt-6">
+              <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Technical ID</h3>
+              <code className="block bg-black/30 p-2 rounded text-xs text-gray-400 break-all select-all">
+                {selectedNode}
+              </code>
+            </div>
+
+            {/* Convert Button */}
+            <div className="absolute bottom-0 left-0 w-full p-4 bg-[#0B1227] border-t border-white/10">
+              <button
+                onClick={() => onConvert && selectedNode && onConvert(selectedNode)}
+                className="w-full py-3 rounded-lg bg-[#10B981] text-black font-semibold hover:bg-[#0ea472] transition shadow-lg shadow-green-900/20"
+              >
+                Convert File
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -28,14 +28,7 @@ export default function HomePage() {
     setPipelineStep(0);
 
     try {
-      // Simulate step progression while the single request runs
-      const stepTimer1 = setTimeout(() => setPipelineStep(1), 3000);
-      const stepTimer2 = setTimeout(() => setPipelineStep(2), 8000);
-
       const result = await analyzeRepo(repoUrl.trim());
-
-      clearTimeout(stepTimer1);
-      clearTimeout(stepTimer2);
       setPipelineStep(3); // all done
 
       // Navigate to map page with the analysis results

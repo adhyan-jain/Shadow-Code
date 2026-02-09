@@ -9,8 +9,27 @@ export default function MapPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { graph, analysis, repoUrl } = location.state || {};
-
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Filter logic
+  const filteredGraph = {
+    nodes: graph?.nodes.filter((node: any) =>
+      !searchTerm ||
+      node.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (node.classNames?.[0] && node.classNames[0].toLowerCase().includes(searchTerm.toLowerCase()))
+    ) || [],
+    edges: graph?.edges.filter((edge: any) => {
+      // Only include edges where both source/target are in filtered nodes
+      const nodeIds = new Set(graph.nodes
+        .filter((node: any) => !searchTerm || node.id.toLowerCase().includes(searchTerm.toLowerCase()) || (node.classNames?.[0] && node.classNames[0].toLowerCase().includes(searchTerm.toLowerCase())))
+        .map((n: any) => n.id));
+      return nodeIds.has(edge.from) && nodeIds.has(edge.to);
+    }) || []
+  };
+
+  const handleConvert = (nodeId: string) => {
+    navigate("/convertfiles", { state: { graph, analysis, repoUrl, selectedId: nodeId } });
+  };
 
   if (!graph || !analysis) {
     return (
@@ -35,7 +54,7 @@ export default function MapPage() {
     const nodeAnalysis = analysis[n.id];
     return nodeAnalysis && nodeAnalysis.classification === "GREEN";
   }).length;
-  
+
   // Filter nodes for search (Graph component might need to handle this or we filter data passed to it)
   // For now, we'll just pass all data as the Graph component in old frontend didn't have search prop.
   // We can implement search later if needed or if Graph component supports it.
@@ -83,7 +102,7 @@ export default function MapPage() {
 
         <main className="flex-1 relative flex flex-col">
           <div className="absolute top-6 left-1/2 -translate-x-1/2 z-10 lg:w-[700px] md:w-[450px] sm:w-[300px]">
-             {/* Search bar - functional or just visual for now since Graph handles rendering */}
+            {/* Search bar - functional or just visual for now since Graph handles rendering */}
             <div className="relative">
               <img
                 src={SearchIcon}
@@ -100,12 +119,12 @@ export default function MapPage() {
           </div>
 
           <div className="flex-1 h-full w-full overflow-hidden">
-             <Graph graph={graph} analysis={analysis} />
+            <Graph graph={filteredGraph} analysis={analysis} onConvert={handleConvert} />
           </div>
 
           <div className="absolute bottom-6 right-6">
             <button
-              onClick={() => navigate("/convertfiles")}
+              onClick={() => navigate("/convertfiles", { state: { graph, analysis, repoUrl } })}
               className="px-6 py-3 rounded-xl bg-[#10B981] text-black font-secondary hover:bg-[#0ea472] transition"
             >
               View Safe Files
