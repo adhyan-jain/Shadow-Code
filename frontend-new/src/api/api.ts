@@ -125,3 +125,16 @@ export async function getConvertedFiles(
   }
   return data;
 }
+
+/**
+ * Fetch raw file content from the backend (original source files)
+ */
+export async function fetchFileContent(filePath: string): Promise<string> {
+  const response = await fetch(
+    `${API_BASE_URL}/file-content?path=${encodeURIComponent(filePath)}`,
+  );
+  if (!response.ok) {
+    throw new Error("Failed to fetch file content");
+  }
+  return response.text();
+}

@@ -305,7 +305,15 @@ export default function MapPage() {
               Go Back
             </button>
             <button
-              onClick={() => hasConvertedFiles && navigate("/comparison")}
+              onClick={() => {
+                if (!hasConvertedFiles) return;
+                // Derive projectId from analysis the same way as the useEffect
+                const anyFP: string = Object.values(analysis).find((v: any) => v.filePath)
+                  ? (Object.values(analysis).find((v: any) => v.filePath) as any).filePath
+                  : "";
+                const pId = anyFP.includes("/repos/") ? anyFP.split("/repos/")[1]?.split("/")[0] : "";
+                navigate("/comparison", { state: { projectId: pId } });
+              }}
               disabled={!hasConvertedFiles}
               className={`px-6 py-3 rounded-xl font-secondary transition ${
                 hasConvertedFiles
