@@ -159,7 +159,9 @@ body {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ─── Error Box ───────────────────────────────────────────── */
@@ -256,6 +258,53 @@ body {
   background-color: #ef4444;
 }
 
+.target-lang {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.target-lang label {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.target-lang select {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.85rem;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  background: #1e293b;
+  color: #cbd5e1;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.target-lang select:hover,
+.target-lang select:focus {
+  border-color: #64748b;
+}
+
+.compare-btn {
+  padding: 0.4rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: 1px solid #3b82f6;
+  border-radius: 8px;
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.compare-btn:hover {
+  background: rgba(59, 130, 246, 0.3);
+  border-color: #60a5fa;
+}
+
 .reset-btn {
   padding: 0.4rem 1rem;
   font-size: 0.85rem;
@@ -272,4 +321,459 @@ body {
 .reset-btn:hover {
   background: #334155;
   border-color: #64748b;
+}
+
+/* ─── Main Content (Graph + Side Panel) ────────────────────── */
+
+.main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.graph-area {
+  flex: 1;
+  min-width: 0;
+  transition: flex 0.3s ease;
+}
+
+/* ─── Side Panel ──────────────────────────────────────────── */
+
+.side-panel {
+  width: 0;
+  overflow: hidden;
+  background: #1a1f2e;
+  border-left: 1px solid #2a3040;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease;
+}
+
+.side-panel.open {
+  width: 380px;
+  min-width: 380px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem 0.5rem;
+  background: #1a1f2e;
+}
+
+.panel-header h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+}
+
+.panel-close {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.panel-close:hover {
+  color: #f1f5f9;
+  background: #334155;
+}
+
+/* ─── Badge Row ───────────────────────────────────────────── */
+
+.panel-badge-row {
+  padding: 0.25rem 1.25rem 0.75rem;
+}
+
+.classification-badge {
+  display: inline-block;
+  padding: 0.3rem 0.9rem;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.classification-badge.green {
+  background: rgba(74, 222, 128, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.classification-badge.yellow {
+  background: rgba(251, 146, 60, 0.15);
+  color: #fb923c;
+  border: 1px solid rgba(251, 146, 60, 0.3);
+}
+
+.classification-badge.red {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* ─── Tab Bar ─────────────────────────────────────────────── */
+
+.panel-tabs {
+  display: flex;
+  border-bottom: 1px solid #2a3040;
+  padding: 0 1.25rem;
+  gap: 0;
+}
+
+.panel-tab {
+  flex: 1;
+  padding: 0.65rem 0;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #64748b;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.panel-tab:hover {
+  color: #94a3b8;
+}
+
+.panel-tab.active {
+  color: #60a5fa;
+  border-bottom-color: #60a5fa;
+}
+
+/* ─── Panel Body ──────────────────────────────────────────── */
+
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.panel-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-width: 380px;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.panel-section-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #94a3b8;
+  margin: 0;
+}
+
+/* ─── Scores Grid (metric cards) ──────────────────────────── */
+
+.scores-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.score-item {
+  background: #141824;
+  border-radius: 10px;
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  border: 1px solid #232838;
+}
+
+.score-label {
+  font-size: 0.68rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.score-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+/* ─── Import Stats ────────────────────────────────────────── */
+
+.import-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #232838;
+}
+
+.import-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.85rem;
+  background: #141824;
+}
+
+.import-row + .import-row {
+  border-top: 1px solid #232838;
+}
+
+.import-label {
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.import-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+/* ─── Metrics Section ─────────────────────────────────────── */
+
+.metrics-section h4 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.metrics-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #cbd5e1;
+}
+
+.metrics-list span {
+  background: #141824;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid #232838;
+}
+
+/* ─── Flags Section ───────────────────────────────────────── */
+
+.flags-section {
+  margin-top: 0.25rem;
+}
+
+.flags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.flag {
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 0.22rem 0.55rem;
+  border-radius: 6px;
+}
+
+.flag.red {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+}
+
+.flag.yellow {
+  background: rgba(251, 146, 60, 0.15);
+  color: #fdba74;
+}
+
+.flag.neutral {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+}
+
+/* ─── Panel Actions (bottom buttons) ──────────────────────── */
+
+.panel-actions {
+  display: flex;
+  gap: 0.6rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #2a3040;
+  background: #1a1f2e;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 0.7rem 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #fff;
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-btn.convert {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.action-btn.convert:hover:not(:disabled) {
+  background: linear-gradient(135deg, #34d399, #10b981);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.25);
+}
+
+.action-btn.workflow {
+  background: linear-gradient(135deg, #9f5035, #7c3a28);
+}
+
+.action-btn.workflow:hover:not(:disabled) {
+  background: linear-gradient(135deg, #b8604a, #9f5035);
+  box-shadow: 0 4px 16px rgba(159, 80, 53, 0.25);
+}
+
+/* ─── Panel Footer Messages ───────────────────────────────── */
+
+.panel-footer-msg {
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid #2a3040;
+}
+
+/* ─── Verdict Section ─────────────────────────────────────── */
+
+.verdict-badge {
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 0.6rem;
+}
+
+.verdict-badge.yes {
+  background: rgba(74, 222, 128, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.35);
+}
+
+.verdict-badge.no {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.verdict-badge.unknown {
+  background: rgba(251, 146, 60, 0.15);
+  color: #fdba74;
+  border: 1px solid rgba(251, 146, 60, 0.35);
+}
+
+.verdict-response {
+  background: #141824;
+  border-radius: 10px;
+  padding: 1rem;
+  border: 1px solid #232838;
+}
+
+.verdict-response h4 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin-bottom: 0.6rem;
+}
+
+.verdict-response pre {
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+  font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* ─── Conversion Output ──────────────────────────────────── */
+
+.conversion-output {
+  background: #141824;
+  border-radius: 10px;
+  border: 1px solid #232838;
+  overflow: hidden;
+}
+
+.conversion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1rem;
+  background: #1a2030;
+  border-bottom: 1px solid #232838;
+}
+
+.conversion-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #10b981;
+}
+
+.go-icon {
+  font-size: 1rem;
+}
+
+.copy-btn {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.copy-btn:hover {
+  background: #334155;
+  color: #e2e8f0;
+  border-color: #64748b;
+}
+
+.code-block {
+  padding: 1rem;
+  margin: 0;
+  overflow-x: auto;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.code-block code {
+  font-size: 0.78rem;
+  color: #e2e8f0;
+  font-family: "SF Mono", "Fira Code", "Consolas", "Monaco", monospace;
+  line-height: 1.6;
+  white-space: pre;
+  tab-size: 4;
 }
