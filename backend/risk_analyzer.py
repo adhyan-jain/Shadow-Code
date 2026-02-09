@@ -379,7 +379,7 @@ if __name__ == "__main__":
     for item in analysis.values():
         classifications[item["classification"]] += 1
     
-    print(f"✓ Generated analysis.json with {len(analysis)} entries")
+    print(f"[OK] Generated analysis.json with {len(analysis)} entries")
     print(f"  - RED (high risk): {classifications['RED']}")
     print(f"  - YELLOW (medium risk): {classifications['YELLOW']}")
     print(f"  - GREEN (low risk): {classifications['GREEN']}")

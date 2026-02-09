@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 import shutil
+import stat
 import uuid
 
 app = Flask(__name__)
@@ -17,6 +18,12 @@ PARSER_JAR = os.path.join(BASE_DIR, 'parser', 'target', 'parser.jar')
 AST_OUTPUT = BASE_DIR  # parser writes ast.json here
 
 
+def remove_readonly(func, path, excinfo):
+    """Error handler for shutil.rmtree to handle read-only files on Windows."""
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
+
+
 def clone_repo(repo_url):
     """Clone a git repository into repos/ and return the path."""
     os.makedirs(REPOS_DIR, exist_ok=True)
@@ -25,7 +32,7 @@ def clone_repo(repo_url):
     for item in os.listdir(REPOS_DIR):
         item_path = os.path.join(REPOS_DIR, item)
         if os.path.isdir(item_path):
-            shutil.rmtree(item_path)
+            shutil.rmtree(item_path, onerror=remove_readonly)
 
     repo_name = repo_url.rstrip('/').split('/')[-1].replace('.git', '')
     clone_path = os.path.join(REPOS_DIR, repo_name)

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import ConvertFilesIcon from "./assets/convertfiles.svg";
@@ -22,23 +22,23 @@ export default function ConvertFiles() {
   const navigate = useNavigate();
   const [files, setFiles] = useState<FileNode[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const loadFiles = async () => {
-      const analysisModule = await import("./analysis.json");
-      const analysis = analysisModule.default as Record<string, FileNode>;
+  // useEffect(() => {
+  //   const loadFiles = async () => {
+  //     const analysisModule = await import("./analysis.json");
+  //     const analysis = analysisModule.default as Record<string, FileNode>;
 
-      const greenFiles = Object.values(analysis)
-        .filter((f) => f.classification === "GREEN")
-        .sort((a, b) => a.riskScore - b.riskScore);
+  //     const greenFiles = Object.values(analysis)
+  //       .filter((f) => f.classification === "GREEN")
+  //       .sort((a, b) => a.riskScore - b.riskScore);
 
-      setFiles(greenFiles);
-      setLoading(false);
-    };
+  //     setFiles(greenFiles);
+  //     setLoading(false);
+  //   };
 
-    loadFiles();
-  }, []);
+  //   loadFiles();
+  // }, []);
 
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
