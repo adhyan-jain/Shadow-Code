@@ -231,8 +231,8 @@ const Graph: React.FC<GraphProps> = ({ graph, analysis, onConvert }) => {
 
       {/* Sidebar Overlay */}
       {selectedNode && (
-        <div className="absolute top-0 right-0 h-full w-96 bg-[#0B1227]/95 backdrop-blur-md border-l border-white/10 shadow-2xl transform transition-transform duration-300 ease-in-out p-6 overflow-y-auto z-20">
-          <div className="flex justify-between items-start mb-6">
+        <div className="absolute top-0 right-0 h-full w-96 bg-[#0B1227]/95 backdrop-blur-md border-l border-white/10 shadow-2xl transform transition-transform duration-300 ease-in-out z-20 flex flex-col">
+          <div className="flex justify-between items-start p-6 pb-4 flex-none border-b border-white/5">
             <h2 className="text-xl font-semibold text-white truncate pr-4" title={selectedNode}>
               {selectedNodeData?.classNames?.[0] || selectedNode}
             </h2>
@@ -246,7 +246,7 @@ const Graph: React.FC<GraphProps> = ({ graph, analysis, onConvert }) => {
             </button>
           </div>
 
-          <div className="space-y-6">
+          <div className="flex-1 overflow-y-auto p-6 pt-6 space-y-6">
             {/* Classification Badge */}
             <div>
               <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Risk Level</h3>
@@ -354,15 +354,15 @@ const Graph: React.FC<GraphProps> = ({ graph, analysis, onConvert }) => {
               </code>
             </div>
 
-            {/* Convert Button */}
-            <div className="absolute bottom-0 left-0 w-full p-4 bg-[#0B1227] border-t border-white/10">
-              <button
-                onClick={() => onConvert && selectedNode && onConvert(selectedNode)}
-                className="w-full py-3 rounded-lg bg-[#10B981] text-black font-semibold hover:bg-[#0ea472] transition shadow-lg shadow-green-900/20"
-              >
-                Convert File
-              </button>
-            </div>
+          </div>
+          {/* Convert Button */}
+          <div className="flex-none p-4 bg-[#0B1227] border-t border-white/10 z-30">
+            <button
+              onClick={() => onConvert && selectedNode && onConvert(selectedNode)}
+              className="w-full py-3 rounded-lg bg-[#10B981] text-black font-semibold hover:bg-[#0ea472] transition shadow-lg shadow-green-900/20"
+            >
+              Convert File
+            </button>
           </div>
         </div>
       )}
