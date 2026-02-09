@@ -63,15 +63,16 @@ export async function migrateBatch() {
 }
 
 /**
- * Convert a Java file to Go via Gemini
+ * Convert a Java file to the target language
  * @param {string} nodeId - The node ID to convert
+ * @param {string} targetLanguage - Target language: 'go' or 'kotlin'
  * @returns {{ success, nodeId, originalFile, goFilename, goCode, javaSource }}
  */
-export async function convertCode(nodeId) {
+export async function convertCode(nodeId, targetLanguage = "go") {
   const response = await fetch(`${API_BASE_URL}/convert-code`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ nodeId }),
+    body: JSON.stringify({ nodeId, targetLanguage }),
   });
 
   const data = await response.json();
@@ -104,6 +105,39 @@ export async function fetchAnalysis() {
 
   if (!response.ok) {
     throw new Error("Failed to fetch analysis data");
+  }
+
+  return response.json();
+}
+
+/**
+ * Fetches the fan-in workflow subgraph for a given node
+ * @param {string} nodeId - The node to get the workflow for
+ * @returns {{ nodes: Array, edges: Array, analysis: object, metadata: object }}
+ */
+export async function fetchWorkflow(nodeId) {
+  const response = await fetch(`${API_BASE_URL}/workflow/${nodeId}`);
+
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.error || "Failed to fetch workflow");
+  }
+
+  return response.json();
+}
+
+/**
+ * Fetches the list of converted files for a project
+ * @param {string} projectId - The project identifier
+ * @returns {{ success: boolean, projectId: string, conversions: Array, total: number }}
+ */
+export async function getConvertedFiles(projectId) {
+  const response = await fetch(
+    `${API_BASE_URL}/project/${projectId}/converted-files`,
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch converted files");
   }
 
   return response.json();
