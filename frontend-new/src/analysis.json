@@ -1,0 +1,1155 @@
+{
+  "file_0": {
+    "nodeId": "file_0",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/.mvn/wrapper/MavenWrapperDownloader.java",
+    "className": "MavenWrapperDownloader",
+    "riskScore": 25,
+    "convertibilityScore": 70,
+    "blastRadius": {
+      "affectedNodes": 0,
+      "totalNodes": 43,
+      "percentage": 0
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Writes to database (side effects present)"
+    ],
+    "recommendations": [
+      "Isolate database writes into a repository/DAO layer",
+      "Consider using transactions for data consistency"
+    ],
+    "metrics": {
+      "fanIn": 0,
+      "fanOut": 0,
+      "readsFromDb": true,
+      "writesToDb": true,
+      "inCycle": false
+    }
+  },
+  "file_1": {
+    "nodeId": "file_1",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/main/java/org/mybatis/jpetstore/domain/Account.java",
+    "className": "Account",
+    "riskScore": 25,
+    "convertibilityScore": 85,
+    "blastRadius": {
+      "affectedNodes": 7,
+      "totalNodes": 43,
+      "percentage": 16.28
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Moderate fan-in (7) - several files depend on this"
+    ],
+    "recommendations": [
+      "Review dependencies - consider if all are necessary"
+    ],
+    "metrics": {
+      "fanIn": 7,
+      "fanOut": 0,
+      "readsFromDb": true,
+      "writesToDb": false,
+      "inCycle": false
+    }
+  },
+  "file_2": {
+    "nodeId": "file_2",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/main/java/org/mybatis/jpetstore/domain/Cart.java",
+    "className": "Cart",
+    "riskScore": 35,
+    "convertibilityScore": 70,
+    "blastRadius": {
+      "affectedNodes": 13,
+      "totalNodes": 43,
+      "percentage": 30.23
+    },
+    "classification": "YELLOW",
+    "reasons": [
+      "Writes to database (side effects present)",
+      "Medium blast radius (30.23% of codebase affected)",
+      "Shared component with database writes (high coordination cost)"
+    ],
+    "recommendations": [
+      "Isolate database writes into a repository/DAO layer",
+      "Consider using transactions for data consistency",
+      "Critical: Shared DB write logic should be carefully tested",
+      "Add comprehensive unit tests before any changes"
+    ],
+    "metrics": {
+      "fanIn": 5,
+      "fanOut": 1,
+      "readsFromDb": true,
+      "writesToDb": true,
+      "inCycle": false
+    }
+  },
+  "file_3": {
+    "nodeId": "file_3",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/main/java/org/mybatis/jpetstore/domain/CartItem.java",
+    "className": "CartItem",
+    "riskScore": 5,
+    "convertibilityScore": 95,
+    "blastRadius": {
+      "affectedNodes": 1,
+      "totalNodes": 43,
+      "percentage": 2.33
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Low coupling and minimal side effects"
+    ],
+    "recommendations": [
+      "Low risk - safe to refactor with standard testing"
+    ],
+    "metrics": {
+      "fanIn": 1,
+      "fanOut": 0,
+      "readsFromDb": true,
+      "writesToDb": false,
+      "inCycle": false
+    }
+  },
+  "file_4": {
+    "nodeId": "file_4",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/main/java/org/mybatis/jpetstore/domain/Category.java",
+    "className": "Category",
+    "riskScore": 35,
+    "convertibilityScore": 75,
+    "blastRadius": {
+      "affectedNodes": 12,
+      "totalNodes": 43,
+      "percentage": 27.91
+    },
+    "classification": "YELLOW",
+    "reasons": [
+      "High fan-in (11) - many files depend on this",
+      "Medium blast radius (27.91% of codebase affected)"
+    ],
+    "recommendations": [
+      "Consider splitting this file into smaller, focused components",
+      "Extract interfaces to reduce tight coupling"
+    ],
+    "metrics": {
+      "fanIn": 11,
+      "fanOut": 0,
+      "readsFromDb": true,
+      "writesToDb": false,
+      "inCycle": false
+    }
+  },
+  "file_5": {
+    "nodeId": "file_5",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/main/java/org/mybatis/jpetstore/domain/Item.java",
+    "className": "Item",
+    "riskScore": 35,
+    "convertibilityScore": 75,
+    "blastRadius": {
+      "affectedNodes": 23,
+      "totalNodes": 43,
+      "percentage": 53.49
+    },
+    "classification": "RED",
+    "reasons": [
+      "High fan-in (16) - many files depend on this",
+      "Large blast radius (53.49% of codebase affected)"
+    ],
+    "recommendations": [
+      "Consider splitting this file into smaller, focused components",
+      "Extract interfaces to reduce tight coupling"
+    ],
+    "metrics": {
+      "fanIn": 16,
+      "fanOut": 1,
+      "readsFromDb": true,
+      "writesToDb": false,
+      "inCycle": false
+    }
+  },
+  "file_6": {
+    "nodeId": "file_6",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/main/java/org/mybatis/jpetstore/domain/LineItem.java",
+    "className": "LineItem",
+    "riskScore": 15,
+    "convertibilityScore": 95,
+    "blastRadius": {
+      "affectedNodes": 5,
+      "totalNodes": 43,
+      "percentage": 11.63
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Low coupling and minimal side effects"
+    ],
+    "recommendations": [
+      "Low risk - safe to refactor with standard testing"
+    ],
+    "metrics": {
+      "fanIn": 3,
+      "fanOut": 1,
+      "readsFromDb": true,
+      "writesToDb": false,
+      "inCycle": false
+    }
+  },
+  "file_7": {
+    "nodeId": "file_7",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/main/java/org/mybatis/jpetstore/domain/Order.java",
+    "className": "Order",
+    "riskScore": 25,
+    "convertibilityScore": 85,
+    "blastRadius": {
+      "affectedNodes": 9,
+      "totalNodes": 43,
+      "percentage": 20.93
+    },
+    "classification": "YELLOW",
+    "reasons": [
+      "Moderate fan-in (9) - several files depend on this",
+      "Medium blast radius (20.93% of codebase affected)"
+    ],
+    "recommendations": [
+      "Review dependencies - consider if all are necessary"
+    ],
+    "metrics": {
+      "fanIn": 9,
+      "fanOut": 2,
+      "readsFromDb": true,
+      "writesToDb": false,
+      "inCycle": false
+    }
+  },
+  "file_8": {
+    "nodeId": "file_8",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/main/java/org/mybatis/jpetstore/domain/Product.java",
+    "className": "Product",
+    "riskScore": 25,
+    "convertibilityScore": 85,
+    "blastRadius": {
+      "affectedNodes": 26,
+      "totalNodes": 43,
+      "percentage": 60.47
+    },
+    "classification": "RED",
+    "reasons": [
+      "Moderate fan-in (9) - several files depend on this",
+      "Large blast radius (60.47% of codebase affected)"
+    ],
+    "recommendations": [
+      "Review dependencies - consider if all are necessary"
+    ],
+    "metrics": {
+      "fanIn": 9,
+      "fanOut": 0,
+      "readsFromDb": true,
+      "writesToDb": false,
+      "inCycle": false
+    }
+  },
+  "file_9": {
+    "nodeId": "file_9",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/main/java/org/mybatis/jpetstore/domain/Sequence.java",
+    "className": "Sequence",
+    "riskScore": 15,
+    "convertibilityScore": 95,
+    "blastRadius": {
+      "affectedNodes": 5,
+      "totalNodes": 43,
+      "percentage": 11.63
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Low coupling and minimal side effects"
+    ],
+    "recommendations": [
+      "Low risk - safe to refactor with standard testing"
+    ],
+    "metrics": {
+      "fanIn": 4,
+      "fanOut": 0,
+      "readsFromDb": true,
+      "writesToDb": false,
+      "inCycle": false
+    }
+  },
+  "file_10": {
+    "nodeId": "file_10",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/main/java/org/mybatis/jpetstore/mapper/AccountMapper.java",
+    "className": "AccountMapper",
+    "riskScore": 25,
+    "convertibilityScore": 70,
+    "blastRadius": {
+      "affectedNodes": 3,
+      "totalNodes": 43,
+      "percentage": 6.98
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Writes to database (side effects present)"
+    ],
+    "recommendations": [
+      "Isolate database writes into a repository/DAO layer",
+      "Consider using transactions for data consistency"
+    ],
+    "metrics": {
+      "fanIn": 2,
+      "fanOut": 1,
+      "readsFromDb": true,
+      "writesToDb": true,
+      "inCycle": false
+    }
+  },
+  "file_11": {
+    "nodeId": "file_11",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/main/java/org/mybatis/jpetstore/mapper/CategoryMapper.java",
+    "className": "CategoryMapper",
+    "riskScore": 5,
+    "convertibilityScore": 95,
+    "blastRadius": {
+      "affectedNodes": 5,
+      "totalNodes": 43,
+      "percentage": 11.63
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Low coupling and minimal side effects"
+    ],
+    "recommendations": [
+      "Low risk - safe to refactor with standard testing"
+    ],
+    "metrics": {
+      "fanIn": 2,
+      "fanOut": 1,
+      "readsFromDb": true,
+      "writesToDb": false,
+      "inCycle": false
+    }
+  },
+  "file_12": {
+    "nodeId": "file_12",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/main/java/org/mybatis/jpetstore/mapper/ItemMapper.java",
+    "className": "ItemMapper",
+    "riskScore": 35,
+    "convertibilityScore": 70,
+    "blastRadius": {
+      "affectedNodes": 8,
+      "totalNodes": 43,
+      "percentage": 18.6
+    },
+    "classification": "YELLOW",
+    "reasons": [
+      "Writes to database (side effects present)",
+      "Shared component with database writes (high coordination cost)"
+    ],
+    "recommendations": [
+      "Isolate database writes into a repository/DAO layer",
+      "Consider using transactions for data consistency",
+      "Critical: Shared DB write logic should be carefully tested",
+      "Add comprehensive unit tests before any changes"
+    ],
+    "metrics": {
+      "fanIn": 4,
+      "fanOut": 1,
+      "readsFromDb": true,
+      "writesToDb": true,
+      "inCycle": false
+    }
+  },
+  "file_13": {
+    "nodeId": "file_13",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/main/java/org/mybatis/jpetstore/mapper/LineItemMapper.java",
+    "className": "LineItemMapper",
+    "riskScore": 25,
+    "convertibilityScore": 70,
+    "blastRadius": {
+      "affectedNodes": 3,
+      "totalNodes": 43,
+      "percentage": 6.98
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Writes to database (side effects present)"
+    ],
+    "recommendations": [
+      "Isolate database writes into a repository/DAO layer",
+      "Consider using transactions for data consistency"
+    ],
+    "metrics": {
+      "fanIn": 2,
+      "fanOut": 1,
+      "readsFromDb": true,
+      "writesToDb": true,
+      "inCycle": false
+    }
+  },
+  "file_14": {
+    "nodeId": "file_14",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/main/java/org/mybatis/jpetstore/mapper/OrderMapper.java",
+    "className": "OrderMapper",
+    "riskScore": 25,
+    "convertibilityScore": 70,
+    "blastRadius": {
+      "affectedNodes": 3,
+      "totalNodes": 43,
+      "percentage": 6.98
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Writes to database (side effects present)"
+    ],
+    "recommendations": [
+      "Isolate database writes into a repository/DAO layer",
+      "Consider using transactions for data consistency"
+    ],
+    "metrics": {
+      "fanIn": 2,
+      "fanOut": 1,
+      "readsFromDb": true,
+      "writesToDb": true,
+      "inCycle": false
+    }
+  },
+  "file_15": {
+    "nodeId": "file_15",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/main/java/org/mybatis/jpetstore/mapper/ProductMapper.java",
+    "className": "ProductMapper",
+    "riskScore": 5,
+    "convertibilityScore": 95,
+    "blastRadius": {
+      "affectedNodes": 5,
+      "totalNodes": 43,
+      "percentage": 11.63
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Low coupling and minimal side effects"
+    ],
+    "recommendations": [
+      "Low risk - safe to refactor with standard testing"
+    ],
+    "metrics": {
+      "fanIn": 2,
+      "fanOut": 1,
+      "readsFromDb": true,
+      "writesToDb": false,
+      "inCycle": false
+    }
+  },
+  "file_16": {
+    "nodeId": "file_16",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/main/java/org/mybatis/jpetstore/mapper/SequenceMapper.java",
+    "className": "SequenceMapper",
+    "riskScore": 25,
+    "convertibilityScore": 70,
+    "blastRadius": {
+      "affectedNodes": 3,
+      "totalNodes": 43,
+      "percentage": 6.98
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Writes to database (side effects present)"
+    ],
+    "recommendations": [
+      "Isolate database writes into a repository/DAO layer",
+      "Consider using transactions for data consistency"
+    ],
+    "metrics": {
+      "fanIn": 2,
+      "fanOut": 1,
+      "readsFromDb": true,
+      "writesToDb": true,
+      "inCycle": false
+    }
+  },
+  "file_17": {
+    "nodeId": "file_17",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/main/java/org/mybatis/jpetstore/service/AccountService.java",
+    "className": "AccountService",
+    "riskScore": 25,
+    "convertibilityScore": 70,
+    "blastRadius": {
+      "affectedNodes": 1,
+      "totalNodes": 43,
+      "percentage": 2.33
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Writes to database (side effects present)"
+    ],
+    "recommendations": [
+      "Isolate database writes into a repository/DAO layer",
+      "Consider using transactions for data consistency"
+    ],
+    "metrics": {
+      "fanIn": 1,
+      "fanOut": 2,
+      "readsFromDb": true,
+      "writesToDb": true,
+      "inCycle": false
+    }
+  },
+  "file_18": {
+    "nodeId": "file_18",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/main/java/org/mybatis/jpetstore/service/CatalogService.java",
+    "className": "CatalogService",
+    "riskScore": 25,
+    "convertibilityScore": 87,
+    "blastRadius": {
+      "affectedNodes": 3,
+      "totalNodes": 43,
+      "percentage": 6.98
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Low coupling and minimal side effects"
+    ],
+    "recommendations": [
+      "No major issues detected - maintain current architecture"
+    ],
+    "metrics": {
+      "fanIn": 3,
+      "fanOut": 6,
+      "readsFromDb": true,
+      "writesToDb": false,
+      "inCycle": false
+    }
+  },
+  "file_19": {
+    "nodeId": "file_19",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/main/java/org/mybatis/jpetstore/service/OrderService.java",
+    "className": "OrderService",
+    "riskScore": 35,
+    "convertibilityScore": 62,
+    "blastRadius": {
+      "affectedNodes": 1,
+      "totalNodes": 43,
+      "percentage": 2.33
+    },
+    "classification": "YELLOW",
+    "reasons": [
+      "Writes to database (side effects present)"
+    ],
+    "recommendations": [
+      "Isolate database writes into a repository/DAO layer",
+      "Consider using transactions for data consistency"
+    ],
+    "metrics": {
+      "fanIn": 1,
+      "fanOut": 7,
+      "readsFromDb": true,
+      "writesToDb": true,
+      "inCycle": false
+    }
+  },
+  "file_20": {
+    "nodeId": "file_20",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/main/java/org/mybatis/jpetstore/web/actions/AbstractActionBean.java",
+    "className": "AbstractActionBean",
+    "riskScore": 5,
+    "convertibilityScore": 95,
+    "blastRadius": {
+      "affectedNodes": 0,
+      "totalNodes": 43,
+      "percentage": 0
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Low coupling and minimal side effects"
+    ],
+    "recommendations": [
+      "Low risk - safe to refactor with standard testing"
+    ],
+    "metrics": {
+      "fanIn": 0,
+      "fanOut": 0,
+      "readsFromDb": true,
+      "writesToDb": false,
+      "inCycle": false
+    }
+  },
+  "file_21": {
+    "nodeId": "file_21",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/main/java/org/mybatis/jpetstore/web/actions/AccountActionBean.java",
+    "className": "AccountActionBean",
+    "riskScore": 25,
+    "convertibilityScore": 70,
+    "blastRadius": {
+      "affectedNodes": 0,
+      "totalNodes": 43,
+      "percentage": 0
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Writes to database (side effects present)"
+    ],
+    "recommendations": [
+      "Isolate database writes into a repository/DAO layer",
+      "Consider using transactions for data consistency"
+    ],
+    "metrics": {
+      "fanIn": 0,
+      "fanOut": 5,
+      "readsFromDb": true,
+      "writesToDb": true,
+      "inCycle": false
+    }
+  },
+  "file_22": {
+    "nodeId": "file_22",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/main/java/org/mybatis/jpetstore/web/actions/CartActionBean.java",
+    "className": "CartActionBean",
+    "riskScore": 25,
+    "convertibilityScore": 70,
+    "blastRadius": {
+      "affectedNodes": 0,
+      "totalNodes": 43,
+      "percentage": 0
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Writes to database (side effects present)"
+    ],
+    "recommendations": [
+      "Isolate database writes into a repository/DAO layer",
+      "Consider using transactions for data consistency"
+    ],
+    "metrics": {
+      "fanIn": 0,
+      "fanOut": 4,
+      "readsFromDb": true,
+      "writesToDb": true,
+      "inCycle": false
+    }
+  },
+  "file_23": {
+    "nodeId": "file_23",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/main/java/org/mybatis/jpetstore/web/actions/CatalogActionBean.java",
+    "className": "CatalogActionBean",
+    "riskScore": 5,
+    "convertibilityScore": 95,
+    "blastRadius": {
+      "affectedNodes": 0,
+      "totalNodes": 43,
+      "percentage": 0
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Low coupling and minimal side effects"
+    ],
+    "recommendations": [
+      "Low risk - safe to refactor with standard testing"
+    ],
+    "metrics": {
+      "fanIn": 0,
+      "fanOut": 4,
+      "readsFromDb": true,
+      "writesToDb": false,
+      "inCycle": false
+    }
+  },
+  "file_24": {
+    "nodeId": "file_24",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/main/java/org/mybatis/jpetstore/web/actions/OrderActionBean.java",
+    "className": "OrderActionBean",
+    "riskScore": 25,
+    "convertibilityScore": 70,
+    "blastRadius": {
+      "affectedNodes": 0,
+      "totalNodes": 43,
+      "percentage": 0
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Writes to database (side effects present)"
+    ],
+    "recommendations": [
+      "Isolate database writes into a repository/DAO layer",
+      "Consider using transactions for data consistency"
+    ],
+    "metrics": {
+      "fanIn": 0,
+      "fanOut": 4,
+      "readsFromDb": true,
+      "writesToDb": true,
+      "inCycle": false
+    }
+  },
+  "file_25": {
+    "nodeId": "file_25",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/test/java/org/mybatis/jpetstore/ScreenTransitionIT.java",
+    "className": "ScreenTransitionIT",
+    "riskScore": 25,
+    "convertibilityScore": 70,
+    "blastRadius": {
+      "affectedNodes": 0,
+      "totalNodes": 43,
+      "percentage": 0
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Writes to database (side effects present)"
+    ],
+    "recommendations": [
+      "Isolate database writes into a repository/DAO layer",
+      "Consider using transactions for data consistency"
+    ],
+    "metrics": {
+      "fanIn": 0,
+      "fanOut": 1,
+      "readsFromDb": true,
+      "writesToDb": true,
+      "inCycle": false
+    }
+  },
+  "file_26": {
+    "nodeId": "file_26",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/test/java/org/mybatis/jpetstore/domain/CartTest.java",
+    "className": "CartTest",
+    "riskScore": 25,
+    "convertibilityScore": 70,
+    "blastRadius": {
+      "affectedNodes": 0,
+      "totalNodes": 43,
+      "percentage": 0
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Writes to database (side effects present)"
+    ],
+    "recommendations": [
+      "Isolate database writes into a repository/DAO layer",
+      "Consider using transactions for data consistency"
+    ],
+    "metrics": {
+      "fanIn": 0,
+      "fanOut": 2,
+      "readsFromDb": true,
+      "writesToDb": true,
+      "inCycle": false
+    }
+  },
+  "file_27": {
+    "nodeId": "file_27",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/test/java/org/mybatis/jpetstore/domain/OrderTest.java",
+    "className": "OrderTest",
+    "riskScore": 5,
+    "convertibilityScore": 95,
+    "blastRadius": {
+      "affectedNodes": 0,
+      "totalNodes": 43,
+      "percentage": 0
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Low coupling and minimal side effects"
+    ],
+    "recommendations": [
+      "Low risk - safe to refactor with standard testing"
+    ],
+    "metrics": {
+      "fanIn": 0,
+      "fanOut": 2,
+      "readsFromDb": true,
+      "writesToDb": false,
+      "inCycle": false
+    }
+  },
+  "file_28": {
+    "nodeId": "file_28",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/test/java/org/mybatis/jpetstore/mapper/AccountMapperTest.java",
+    "className": "AccountMapperTest",
+    "riskScore": 25,
+    "convertibilityScore": 70,
+    "blastRadius": {
+      "affectedNodes": 0,
+      "totalNodes": 43,
+      "percentage": 0
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Writes to database (side effects present)"
+    ],
+    "recommendations": [
+      "Isolate database writes into a repository/DAO layer",
+      "Consider using transactions for data consistency"
+    ],
+    "metrics": {
+      "fanIn": 0,
+      "fanOut": 2,
+      "readsFromDb": true,
+      "writesToDb": true,
+      "inCycle": false
+    }
+  },
+  "file_29": {
+    "nodeId": "file_29",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/test/java/org/mybatis/jpetstore/mapper/CategoryMapperTest.java",
+    "className": "CategoryMapperTest",
+    "riskScore": 5,
+    "convertibilityScore": 95,
+    "blastRadius": {
+      "affectedNodes": 0,
+      "totalNodes": 43,
+      "percentage": 0
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Low coupling and minimal side effects"
+    ],
+    "recommendations": [
+      "Low risk - safe to refactor with standard testing"
+    ],
+    "metrics": {
+      "fanIn": 0,
+      "fanOut": 1,
+      "readsFromDb": true,
+      "writesToDb": false,
+      "inCycle": false
+    }
+  },
+  "file_30": {
+    "nodeId": "file_30",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/test/java/org/mybatis/jpetstore/mapper/ItemMapperTest.java",
+    "className": "ItemMapperTest",
+    "riskScore": 25,
+    "convertibilityScore": 70,
+    "blastRadius": {
+      "affectedNodes": 0,
+      "totalNodes": 43,
+      "percentage": 0
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Writes to database (side effects present)"
+    ],
+    "recommendations": [
+      "Isolate database writes into a repository/DAO layer",
+      "Consider using transactions for data consistency"
+    ],
+    "metrics": {
+      "fanIn": 0,
+      "fanOut": 3,
+      "readsFromDb": true,
+      "writesToDb": true,
+      "inCycle": false
+    }
+  },
+  "file_31": {
+    "nodeId": "file_31",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/test/java/org/mybatis/jpetstore/mapper/LineItemMapperTest.java",
+    "className": "LineItemMapperTest",
+    "riskScore": 25,
+    "convertibilityScore": 70,
+    "blastRadius": {
+      "affectedNodes": 0,
+      "totalNodes": 43,
+      "percentage": 0
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Writes to database (side effects present)"
+    ],
+    "recommendations": [
+      "Isolate database writes into a repository/DAO layer",
+      "Consider using transactions for data consistency"
+    ],
+    "metrics": {
+      "fanIn": 0,
+      "fanOut": 3,
+      "readsFromDb": true,
+      "writesToDb": true,
+      "inCycle": false
+    }
+  },
+  "file_32": {
+    "nodeId": "file_32",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/test/java/org/mybatis/jpetstore/mapper/MapperTestContext.java",
+    "className": "MapperTestContext",
+    "riskScore": 0,
+    "convertibilityScore": 100,
+    "blastRadius": {
+      "affectedNodes": 0,
+      "totalNodes": 43,
+      "percentage": 0
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Low coupling and minimal side effects"
+    ],
+    "recommendations": [
+      "Low risk - safe to refactor with standard testing"
+    ],
+    "metrics": {
+      "fanIn": 0,
+      "fanOut": 0,
+      "readsFromDb": false,
+      "writesToDb": false,
+      "inCycle": false
+    }
+  },
+  "file_33": {
+    "nodeId": "file_33",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/test/java/org/mybatis/jpetstore/mapper/OrderMapperTest.java",
+    "className": "OrderMapperTest",
+    "riskScore": 25,
+    "convertibilityScore": 70,
+    "blastRadius": {
+      "affectedNodes": 0,
+      "totalNodes": 43,
+      "percentage": 0
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Writes to database (side effects present)"
+    ],
+    "recommendations": [
+      "Isolate database writes into a repository/DAO layer",
+      "Consider using transactions for data consistency"
+    ],
+    "metrics": {
+      "fanIn": 0,
+      "fanOut": 1,
+      "readsFromDb": true,
+      "writesToDb": true,
+      "inCycle": false
+    }
+  },
+  "file_34": {
+    "nodeId": "file_34",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/test/java/org/mybatis/jpetstore/mapper/ProductMapperTest.java",
+    "className": "ProductMapperTest",
+    "riskScore": 5,
+    "convertibilityScore": 95,
+    "blastRadius": {
+      "affectedNodes": 0,
+      "totalNodes": 43,
+      "percentage": 0
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Low coupling and minimal side effects"
+    ],
+    "recommendations": [
+      "Low risk - safe to refactor with standard testing"
+    ],
+    "metrics": {
+      "fanIn": 0,
+      "fanOut": 2,
+      "readsFromDb": true,
+      "writesToDb": false,
+      "inCycle": false
+    }
+  },
+  "file_35": {
+    "nodeId": "file_35",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/test/java/org/mybatis/jpetstore/mapper/SequenceMapperTest.java",
+    "className": "SequenceMapperTest",
+    "riskScore": 25,
+    "convertibilityScore": 70,
+    "blastRadius": {
+      "affectedNodes": 0,
+      "totalNodes": 43,
+      "percentage": 0
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Writes to database (side effects present)"
+    ],
+    "recommendations": [
+      "Isolate database writes into a repository/DAO layer",
+      "Consider using transactions for data consistency"
+    ],
+    "metrics": {
+      "fanIn": 0,
+      "fanOut": 1,
+      "readsFromDb": true,
+      "writesToDb": true,
+      "inCycle": false
+    }
+  },
+  "file_36": {
+    "nodeId": "file_36",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/test/java/org/mybatis/jpetstore/service/AccountServiceTest.java",
+    "className": "AccountServiceTest",
+    "riskScore": 25,
+    "convertibilityScore": 70,
+    "blastRadius": {
+      "affectedNodes": 0,
+      "totalNodes": 43,
+      "percentage": 0
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Writes to database (side effects present)"
+    ],
+    "recommendations": [
+      "Isolate database writes into a repository/DAO layer",
+      "Consider using transactions for data consistency"
+    ],
+    "metrics": {
+      "fanIn": 0,
+      "fanOut": 2,
+      "readsFromDb": true,
+      "writesToDb": true,
+      "inCycle": false
+    }
+  },
+  "file_37": {
+    "nodeId": "file_37",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/test/java/org/mybatis/jpetstore/service/CatalogServiceTest.java",
+    "className": "CatalogServiceTest",
+    "riskScore": 15,
+    "convertibilityScore": 87,
+    "blastRadius": {
+      "affectedNodes": 0,
+      "totalNodes": 43,
+      "percentage": 0
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Low coupling and minimal side effects"
+    ],
+    "recommendations": [
+      "Low risk - safe to refactor with standard testing"
+    ],
+    "metrics": {
+      "fanIn": 0,
+      "fanOut": 6,
+      "readsFromDb": true,
+      "writesToDb": false,
+      "inCycle": false
+    }
+  },
+  "file_38": {
+    "nodeId": "file_38",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/test/java/org/mybatis/jpetstore/service/OrderServiceTest.java",
+    "className": "OrderServiceTest",
+    "riskScore": 35,
+    "convertibilityScore": 62,
+    "blastRadius": {
+      "affectedNodes": 0,
+      "totalNodes": 43,
+      "percentage": 0
+    },
+    "classification": "YELLOW",
+    "reasons": [
+      "Writes to database (side effects present)"
+    ],
+    "recommendations": [
+      "Isolate database writes into a repository/DAO layer",
+      "Consider using transactions for data consistency"
+    ],
+    "metrics": {
+      "fanIn": 0,
+      "fanOut": 8,
+      "readsFromDb": true,
+      "writesToDb": true,
+      "inCycle": false
+    }
+  },
+  "file_39": {
+    "nodeId": "file_39",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/test/java/org/mybatis/jpetstore/web/actions/AccountActionBeanTest.java",
+    "className": "AccountActionBeanTest",
+    "riskScore": 5,
+    "convertibilityScore": 95,
+    "blastRadius": {
+      "affectedNodes": 0,
+      "totalNodes": 43,
+      "percentage": 0
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Low coupling and minimal side effects"
+    ],
+    "recommendations": [
+      "Low risk - safe to refactor with standard testing"
+    ],
+    "metrics": {
+      "fanIn": 0,
+      "fanOut": 2,
+      "readsFromDb": true,
+      "writesToDb": false,
+      "inCycle": false
+    }
+  },
+  "file_40": {
+    "nodeId": "file_40",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/test/java/org/mybatis/jpetstore/web/actions/CartActionBeanTest.java",
+    "className": "CartActionBeanTest",
+    "riskScore": 25,
+    "convertibilityScore": 70,
+    "blastRadius": {
+      "affectedNodes": 0,
+      "totalNodes": 43,
+      "percentage": 0
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Writes to database (side effects present)"
+    ],
+    "recommendations": [
+      "Isolate database writes into a repository/DAO layer",
+      "Consider using transactions for data consistency"
+    ],
+    "metrics": {
+      "fanIn": 0,
+      "fanOut": 2,
+      "readsFromDb": true,
+      "writesToDb": true,
+      "inCycle": false
+    }
+  },
+  "file_41": {
+    "nodeId": "file_41",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/test/java/org/mybatis/jpetstore/web/actions/CatalogActionBeanTest.java",
+    "className": "CatalogActionBeanTest",
+    "riskScore": 5,
+    "convertibilityScore": 95,
+    "blastRadius": {
+      "affectedNodes": 0,
+      "totalNodes": 43,
+      "percentage": 0
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Low coupling and minimal side effects"
+    ],
+    "recommendations": [
+      "Low risk - safe to refactor with standard testing"
+    ],
+    "metrics": {
+      "fanIn": 0,
+      "fanOut": 3,
+      "readsFromDb": true,
+      "writesToDb": false,
+      "inCycle": false
+    }
+  },
+  "file_42": {
+    "nodeId": "file_42",
+    "filePath": "/home/adhyan/Desktop/jpetstore-6/src/test/java/org/mybatis/jpetstore/web/actions/OrderActionBeanTest.java",
+    "className": "OrderActionBeanTest",
+    "riskScore": 5,
+    "convertibilityScore": 95,
+    "blastRadius": {
+      "affectedNodes": 0,
+      "totalNodes": 43,
+      "percentage": 0
+    },
+    "classification": "GREEN",
+    "reasons": [
+      "Low coupling and minimal side effects"
+    ],
+    "recommendations": [
+      "Low risk - safe to refactor with standard testing"
+    ],
+    "metrics": {
+      "fanIn": 0,
+      "fanOut": 1,
+      "readsFromDb": true,
+      "writesToDb": false,
+      "inCycle": false
+    }
+  }
+}
