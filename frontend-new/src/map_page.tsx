@@ -51,7 +51,7 @@ export default function MapPage() {
       cachedLanguageLocked = false;
       cachedConvertedCount = 0;
       setTargetLanguage("");
-      setLanguageLocked(false);
+      // setLanguageLocked(false);
       setConvertedCount(0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -61,7 +61,7 @@ export default function MapPage() {
   const [targetLanguage, setTargetLanguage] = useState<"go" | "kotlin" | "">(
     cachedTargetLanguage,
   );
-  const [languageLocked, setLanguageLocked] = useState(cachedLanguageLocked);
+  // const [languageLocked, setLanguageLocked] = useState(cachedLanguageLocked);
   const [convertedCount, setConvertedCount] = useState(cachedConvertedCount);
   const [converting, setConverting] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -89,7 +89,7 @@ export default function MapPage() {
           const lang = data.conversions[0]?.target_language?.toLowerCase();
           if (lang === "go" || lang === "kotlin") {
             setTargetLanguage(lang);
-            setLanguageLocked(true);
+            // setLanguageLocked(true);
             cachedTargetLanguage = lang;
             cachedLanguageLocked = true;
           }
@@ -146,11 +146,11 @@ export default function MapPage() {
       setConvertedCount(newCount);
       cachedConvertedCount = newCount;
       // Lock language after first successful conversion
-      if (!languageLocked) {
-        setLanguageLocked(true);
-        cachedLanguageLocked = true;
-        cachedTargetLanguage = targetLanguage;
-      }
+      // if (!languageLocked) {
+      //   setLanguageLocked(true);
+      //   cachedLanguageLocked = true;
+      //   cachedTargetLanguage = targetLanguage;
+      // }
       setToastMessage("File successfully converted");
       setShowToast(true);
     } catch (err) {
@@ -243,22 +243,13 @@ export default function MapPage() {
                 setTargetLanguage(val);
                 cachedTargetLanguage = val;
               }}
-              disabled={languageLocked}
-              className={`w-full rounded-lg border px-3 py-2 text-sm bg-[#0B1227] focus:outline-none focus:ring-2 focus:ring-[#10B981] ${
-                languageLocked
-                  ? "border-white/5 text-gray-500 cursor-not-allowed opacity-60"
-                  : "border-white/10 text-white"
-              }`}
+              // disabled={languageLocked}
+              className={`w-full rounded-lg border px-3 py-2 text-sm bg-[#0B1227] focus:outline-none focus:ring-2 focus:ring-[#10B981] ${"border-white/10 text-white"}`}
             >
               <option value="">Select…</option>
               <option value="go">Go</option>
               <option value="kotlin">Kotlin</option>
             </select>
-            {languageLocked && (
-              <p className="mt-2 text-xs text-yellow-500/80">
-                Language locked. Reparse repo to change.
-              </p>
-            )}
           </div>
         </aside>
 
@@ -308,10 +299,18 @@ export default function MapPage() {
               onClick={() => {
                 if (!hasConvertedFiles) return;
                 // Derive projectId from analysis the same way as the useEffect
-                const anyFP: string = Object.values(analysis).find((v: any) => v.filePath)
-                  ? (Object.values(analysis).find((v: any) => v.filePath) as any).filePath
+                const anyFP: string = Object.values(analysis).find(
+                  (v: any) => v.filePath,
+                )
+                  ? (
+                      Object.values(analysis).find(
+                        (v: any) => v.filePath,
+                      ) as any
+                    ).filePath
                   : "";
-                const pId = anyFP.includes("/repos/") ? anyFP.split("/repos/")[1]?.split("/")[0] : "";
+                const pId = anyFP.includes("/repos/")
+                  ? anyFP.split("/repos/")[1]?.split("/")[0]
+                  : "";
                 navigate("/comparison", { state: { projectId: pId } });
               }}
               disabled={!hasConvertedFiles}

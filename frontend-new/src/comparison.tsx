@@ -34,16 +34,20 @@ export default function Comparison() {
   // Derive projectId from analysis if not provided via state
   useEffect(() => {
     if (projectId) return;
+
     fetchAnalysis()
       .then((analysis) => {
-        const anyFP: string = Object.values(analysis).find(
+        const entry = Object.values(analysis).find(
           (v: any) => v.filePath,
-        )
-          ? (Object.values(analysis).find((v: any) => v.filePath) as any)
-              .filePath
-          : "";
-        if (anyFP.includes("/repos/")) {
-          const pId = anyFP.split("/repos/")[1]?.split("/")[0] ?? "";
+        ) as any;
+
+        if (!entry?.filePath) return;
+
+        // Normalize Windows paths to Unix-style
+        const normalizedFP = entry.filePath.replace(/\\/g, "/");
+
+        if (normalizedFP.includes("/repos/")) {
+          const pId = normalizedFP.split("/repos/")[1]?.split("/")[0] ?? "";
           if (pId) setProjectId(pId);
         }
       })
@@ -132,9 +136,7 @@ export default function Comparison() {
                   title={baseName}
                 >
                   {baseName}
-                  <span className="ml-1 text-[10px] text-white/30">
-                    {ext}
-                  </span>
+                  <span className="ml-1 text-[10px] text-white/30">{ext}</span>
                 </button>
               );
             })
@@ -158,11 +160,11 @@ export default function Comparison() {
                   Comparison
                 </h1>
               </div>
-              <p className="text-xs sm:text-sm text-white/50 mt-1">
+              {/* <p className="text-xs sm:text-sm text-white/50 mt-1">
                 {selectedRecord
                   ? `Source: ${selectedRecord.original_file.split("/").pop()}`
                   : "Select a file from the sidebar"}
-              </p>
+              </p> */}
             </div>
 
             {targetLang && (

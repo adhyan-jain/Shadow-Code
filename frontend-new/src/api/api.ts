@@ -89,11 +89,12 @@ export interface ConvertCodeResult {
 export async function convertCode(
   nodeId: string,
   targetLanguage: "go" | "kotlin" = "go",
+  projectId?: string,
 ): Promise<ConvertCodeResult> {
   const response = await fetch(`${API_BASE_URL}/convert-code`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ nodeId, targetLanguage }),
+    body: JSON.stringify({ nodeId, targetLanguage, projectId }),
   });
 
   const data = await response.json();
