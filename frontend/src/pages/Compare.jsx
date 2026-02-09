@@ -49,11 +49,14 @@ function Compare() {
         setOriginalCode("// Error: Could not load original file");
       }
 
-      // For converted code, we'll need to reconstruct it from a previous conversion
-      // Since we don't store the actual converted code, we'll show a placeholder
-      setConvertedCode(
-        `// Converted to ${conversion.target_language}\n// File: ${conversion.converted_file}\n// Timestamp: ${conversion.converted_at}\n\n// Note: Actual converted code would be displayed here in production.\n// The conversion was completed but the code is not persisted to disk.`,
-      );
+      // For converted code, use what was stored in the conversion registry
+      if (conversion.converted_code) {
+        setConvertedCode(conversion.converted_code);
+      } else {
+        setConvertedCode(
+          `// Converted to ${conversion.target_language}\n// File: ${conversion.converted_file}\n// Timestamp: ${conversion.converted_at}\n\n// Note: Converted code was not persisted for this entry.`,
+        );
+      }
     } catch (err) {
       setOriginalCode("// Error loading original code");
       setConvertedCode("// Error loading converted code");
