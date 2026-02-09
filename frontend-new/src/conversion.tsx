@@ -8,6 +8,7 @@ export default function ConversionResult() {
   const handleNavigation = () => {
     navigate("/comparison");
   };
+
   return (
     <div className="min-h-screen bg-[#060C1E] px-4 sm:px-6 lg:px-10 py-6 sm:py-8 text-white font-primary">
       <div className="flex items-center gap-3 text-lg font-semibold font-secondary">
@@ -16,12 +17,13 @@ export default function ConversionResult() {
           <span className="text-[#10B981]">Shadow</span>Code
         </span>
       </div>
+
       <div className="fixed inset-0 z-0 w-full h-full min-h-screen pointer-events-none">
         <ParticlesBackground />
       </div>
 
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="rounded-xl border border-white/10 bg-white/5 p-6">
+      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8 relative z-10">
+        <div className="rounded-xl border border-white/10 bg-white/10 backdrop-blur-md shadow-lg p-6">
           <h3 className="text-base font-secondary mb-6">
             <span className="text-[#10B981]">Before</span> Conversion
           </h3>
@@ -61,7 +63,7 @@ export default function ConversionResult() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-white/5 p-6">
+        <div className="rounded-xl border border-white/10 bg-white/10 backdrop-blur-md shadow-lg p-6">
           <h3 className="text-base font-secondary mb-6">
             <span className="text-[#10B981]">After</span> Conversion
           </h3>
@@ -102,11 +104,13 @@ export default function ConversionResult() {
         </div>
       </div>
 
-      <div className="mt-10 rounded-xl border border-[#10B981]/30 bg-gradient-to-r from-[#0B1227] to-[#060C1E] p-6 flex gap-4">
+      <div className="mt-10 rounded-xl border border-[#10B981]/30 bg-gradient-to-r from-[#0B1227] to-[#060C1E] p-6 flex gap-4 relative z-10">
         <img src={ConvertFilesIcon} alt="" className="h-10 w-10 shrink-0" />
 
         <div>
-          <h4 className="font-secondary text-sm mb-1">Migration successful!</h4>
+          <h4 className="font-secondary text-sm mb-1">
+            Migration successful!
+          </h4>
 
           <p className="text-sm text-gray-400 leading-relaxed">
             The selected files have been successfully converted and integrated.
@@ -115,7 +119,7 @@ export default function ConversionResult() {
         </div>
       </div>
 
-      <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
+      <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center relative z-10">
         <button
           onClick={() => navigate("/map")}
           className="px-8 py-2.5 rounded-md border border-[#10B981] text-[#10B981] text-sm font-secondary hover:bg-[#10B981]/10 transition"

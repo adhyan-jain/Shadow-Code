@@ -179,5 +179,5 @@ if __name__ == "__main__":
     with open(metrics_path, "w") as f:
         json.dump(result["metrics"], f, indent=2)
     
-    print(f"✓ Generated graph.json with {len(result['graph']['nodes'])} nodes and {len(result['graph']['edges'])} edges")
-    print(f"✓ Generated metrics.json with {len(result['metrics'])} entries")
+    print(f"[OK] Generated graph.json with {len(result['graph']['nodes'])} nodes and {len(result['graph']['edges'])} edges")
+    print(f"[OK] Generated metrics.json with {len(result['metrics'])} entries")

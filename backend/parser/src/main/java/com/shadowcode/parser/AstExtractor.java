@@ -14,6 +14,7 @@ import com.github.javaparser.ast.stmt.CatchClause;
 import com.github.javaparser.ast.stmt.ThrowStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -69,7 +70,7 @@ public class AstExtractor {
      */
     public FileNode extractFromFile(Path filePath) {
         try {
-            String content = Files.readString(filePath);
+            String content = new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8);
             ParseResult<CompilationUnit> parseResult = javaParser.parse(content);
 
             if (!parseResult.isSuccessful() || !parseResult.getResult().isPresent()) {
