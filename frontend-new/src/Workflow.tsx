@@ -1,64 +1,45 @@
-import { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import Graph from "./components/Graph";
 import Toast from "./components/Toast";
 import { convertCode, getConvertedFiles, migrateNode } from "./api/api";
 import SearchIcon from "./assets/search.svg";
 import Logo from "./assets/logo.svg";
 
-// ─── Session-level cache ────────────────────────────────────
-// Survives navigation but clears on full page refresh / new tab.
-// Exported for Workflow page access
-export let cachedGraph: any = null;
-export let cachedAnalysis: any = null;
-let cachedRepoUrl: string = "";
+/**
+ * OBJECTIVE B & D: Workflow Page
+ *
+ * This page displays a fan-in dependency closure for a selected node.
+ * It reuses ALL functionality from /map:
+ * - Risk analysis
+ * - Node selection
+ * - Side panel
+ * - Convert file logic
+ * - Visual language
+ *
+ * ONLY DIFFERENCE: Graph data is scoped to selected node + transitive fan-ins
+ */
+
+// Import cache from map_page to access full graph
+import {
+  cachedGraph as importedCachedGraph,
+  cachedAnalysis as importedCachedAnalysis,
+} from "./map_page";
+
+// Local cache for workflow page state
 let cachedTargetLanguage: "go" | "kotlin" | "typescript" | "" = "";
 let cachedConvertedCount: number = 0;
 
-export function clearMapCache() {
-  cachedGraph = null;
-  cachedAnalysis = null;
-  cachedRepoUrl = "";
-  cachedTargetLanguage = "";
-  cachedConvertedCount = 0;
-}
-
-export default function MapPage() {
-  const location = useLocation();
+export default function WorkflowPage() {
+  const { nodeId } = useParams<{ nodeId: string }>();
   const navigate = useNavigate();
 
-  // Hydrate from navigation state (fresh analysis) or cache (returning)
-  const incoming = location.state as any;
-  const graph = incoming?.graph ?? cachedGraph;
-  const analysis = incoming?.analysis ?? cachedAnalysis;
-  const repoUrl = incoming?.repoUrl ?? cachedRepoUrl;
-
-  // Persist to cache whenever we have data
-  useEffect(() => {
-    if (graph && analysis) {
-      cachedGraph = graph;
-      cachedAnalysis = analysis;
-      cachedRepoUrl = repoUrl;
-    }
-  }, [graph, analysis, repoUrl]);
-
-  // If fresh analysis came in (from home), reset language lock + converted count
-  useEffect(() => {
-    if (incoming?.graph) {
-      cachedTargetLanguage = "";
-      cachedConvertedCount = 0;
-      setTargetLanguage("");
-      // setLanguageLocked(false);
-      setConvertedCount(0);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [incoming?.graph]);
-
+  const [fullGraph, setFullGraph] = useState<any>(null);
+  const [fullAnalysis, setFullAnalysis] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [targetLanguage, setTargetLanguage] = useState<
     "go" | "kotlin" | "typescript" | ""
   >(cachedTargetLanguage);
-  // const [languageLocked, setLanguageLocked] = useState(cachedLanguageLocked);
   const [convertedCount, setConvertedCount] = useState(cachedConvertedCount);
   const [converting, setConverting] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
@@ -70,14 +51,25 @@ export default function MapPage() {
     riskScore: number;
   } | null>(null);
 
-  // On mount, check backend for existing converted files
+  // Load full graph from map_page cache
   useEffect(() => {
-    if (!analysis) return;
-    // Derive project id the same way the backend does
-    const anyFilePath: string = Object.values(analysis).find(
+    if (importedCachedGraph && importedCachedAnalysis) {
+      setFullGraph(importedCachedGraph);
+      setFullAnalysis(importedCachedAnalysis);
+    } else {
+      // If no cache, redirect back to map
+      navigate("/map");
+    }
+  }, [navigate]);
+
+  // Check for existing converted files
+  useEffect(() => {
+    if (!fullAnalysis) return;
+    const anyFilePath: string = Object.values(fullAnalysis).find(
       (v: any) => v.filePath,
     )
-      ? (Object.values(analysis).find((v: any) => v.filePath) as any).filePath
+      ? (Object.values(fullAnalysis).find((v: any) => v.filePath) as any)
+          .filePath
       : "";
     if (!anyFilePath || !anyFilePath.includes("/repos/")) return;
     const projectId = anyFilePath.split("/repos/")[1]?.split("/")[0];
@@ -88,56 +80,91 @@ export default function MapPage() {
         if (data.total > 0) {
           setConvertedCount(data.total);
           cachedConvertedCount = data.total;
-          // If conversions exist, lock the language
           const lang = data.conversions[0]?.target_language?.toLowerCase();
           if (lang === "go" || lang === "kotlin" || lang === "typescript") {
             setTargetLanguage(lang);
-            // setLanguageLocked(true);
             cachedTargetLanguage = lang;
           }
         }
       })
       .catch(() => {
-        /* ignore — first time */
+        /* ignore */
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [analysis]);
+  }, [fullAnalysis]);
 
-  // Filter logic
-  const filteredGraph = {
-    nodes:
-      graph?.nodes.filter(
-        (node: any) =>
-          !searchTerm ||
-          node.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (node.classNames?.[0] &&
-            node.classNames[0]
-              .toLowerCase()
-              .includes(searchTerm.toLowerCase())),
-      ) || [],
-    edges:
-      graph?.edges.filter((edge: any) => {
-        const nodeIds = new Set(
-          graph.nodes
-            .filter(
-              (node: any) =>
-                !searchTerm ||
-                node.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (node.classNames?.[0] &&
-                  node.classNames[0]
-                    .toLowerCase()
-                    .includes(searchTerm.toLowerCase())),
-            )
-            .map((n: any) => n.id),
-        );
-        return nodeIds.has(edge.from) && nodeIds.has(edge.to);
-      }) || [],
-  };
+  /**
+   * OBJECTIVE D: Fan-In Dependency Closure Algorithm
+   *
+   * Computes transitive fan-ins using reverse graph traversal (BFS).
+   * Includes selected node + all nodes that depend on it (directly or indirectly).
+   */
+  const workflowGraph = useMemo(() => {
+    if (!fullGraph || !nodeId) return null;
 
-  // ─── Step 1: Get Backboard verdict ────────────────────────
+    // Build reverse adjacency list (to -> from)
+    const reverseEdges = new Map<string, Set<string>>();
+    fullGraph.edges.forEach((edge: any) => {
+      if (!reverseEdges.has(edge.to)) {
+        reverseEdges.set(edge.to, new Set());
+      }
+      reverseEdges.get(edge.to)!.add(edge.from);
+    });
+
+    // BFS to find all fan-ins (nodes that depend on nodeId)
+    const fanInNodes = new Set<string>();
+    fanInNodes.add(nodeId); // Include selected node
+
+    const queue: string[] = [nodeId];
+    const visited = new Set<string>([nodeId]);
+
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      const dependents = reverseEdges.get(current);
+
+      if (dependents) {
+        dependents.forEach((dependent) => {
+          if (!visited.has(dependent)) {
+            visited.add(dependent);
+            fanInNodes.add(dependent);
+            queue.push(dependent);
+          }
+        });
+      }
+    }
+
+    // Filter nodes and edges to include only fan-in closure
+    const nodes = fullGraph.nodes.filter((n: any) => fanInNodes.has(n.id));
+    const edges = fullGraph.edges.filter(
+      (e: any) => fanInNodes.has(e.from) && fanInNodes.has(e.to),
+    );
+
+    return { nodes, edges };
+  }, [fullGraph, nodeId]);
+
+  // Apply search filter
+  const filteredGraph = useMemo(() => {
+    if (!workflowGraph) return null;
+    if (!searchTerm.trim()) return workflowGraph;
+
+    const lowerSearch = searchTerm.toLowerCase();
+    const nodes = workflowGraph.nodes.filter((n: any) => {
+      const className = n.classNames?.[0] || "";
+      return (
+        n.id.toLowerCase().includes(lowerSearch) ||
+        className.toLowerCase().includes(lowerSearch)
+      );
+    });
+    const nodeIds = new Set(nodes.map((n: any) => n.id));
+    const edges = workflowGraph.edges.filter(
+      (e: any) => nodeIds.has(e.from) && nodeIds.has(e.to),
+    );
+    return { nodes, edges };
+  }, [workflowGraph, searchTerm]);
+
+  // Step 1: Get Backboard verdict
   const handleRequestVerdict = async (nodeId: string) => {
     if (!targetLanguage) {
-      setToastMessage("Select a target language first.");
+      setToastMessage("Please select a target language first");
       setShowToast(true);
       return;
     }
@@ -149,43 +176,37 @@ export default function MapPage() {
         response: result.response,
         riskScore: result.riskScore,
       });
-    } catch (err) {
-      console.error("Verdict request failed:", err);
-      setToastMessage(
-        err instanceof Error ? err.message : "Failed to get risk assessment",
-      );
+    } catch (err: any) {
+      setToastMessage(err.message || "Failed to get risk assessment");
       setShowToast(true);
     } finally {
       setAnalyzing(false);
     }
   };
 
-  // ─── Step 2: Actually convert the file ────────────────────
+  // Step 2: Actually convert the file
   const handleConfirmConvert = async (nodeId: string) => {
     if (!targetLanguage) {
-      setToastMessage("Select a target language first.");
+      setToastMessage("Please select a target language first");
       setShowToast(true);
       return;
     }
+
     setConverting(true);
     try {
-      await convertCode(nodeId, targetLanguage);
-      const newCount = convertedCount + 1;
-      setConvertedCount(newCount);
-      cachedConvertedCount = newCount;
-      // Lock language after first successful conversion
-      // if (!languageLocked) {
-      //   setLanguageLocked(true);
-      //   cachedLanguageLocked = true;
-      //   cachedTargetLanguage = targetLanguage;
-      // }
-      setToastMessage("File successfully converted");
+      const nodeData = fullAnalysis[nodeId];
+      if (!nodeData?.filePath) {
+        throw new Error("No file path found for this node");
+      }
+
+      await convertCode(nodeData.filePath, targetLanguage);
+      setConvertedCount((prev) => prev + 1);
+      cachedConvertedCount += 1;
+      setToastMessage(`✓ Converted to ${targetLanguage.toUpperCase()}`);
       setShowToast(true);
       setVerdictData(null);
-    } catch (err) {
-      console.error("Conversion failed:", err);
-      const errorMessage =
-        err instanceof Error ? err.message : "Conversion failed";
+    } catch (err: any) {
+      const errorMessage = err.message || "Conversion failed";
 
       // Enhanced error message for rate limits
       if (
@@ -206,50 +227,37 @@ export default function MapPage() {
     }
   };
 
-  if (!graph || !analysis) {
+  if (!fullGraph || !fullAnalysis || !workflowGraph) {
     return (
-      <div className="min-h-screen bg-[#060C1E] flex items-center justify-center text-white">
-        <div className="text-center">
-          <h2 className="text-xl mb-4">No analysis data found</h2>
-          <button
-            onClick={() => navigate("/")}
-            className="px-6 py-2 rounded-xl bg-[#10B981] text-black font-secondary hover:bg-[#0ea472] transition"
-          >
-            Go Home
-          </button>
-        </div>
+      <div className="min-h-screen bg-[#060C1E] flex items-center justify-center">
+        <div className="text-white">Loading workflow...</div>
       </div>
     );
   }
 
-  // Calculate stats
-  const nodes = graph.nodes;
-  const totalFiles = nodes.length;
-  const safeFiles = nodes.filter((n: any) => {
-    const nodeAnalysis = analysis[n.id];
-    return nodeAnalysis && nodeAnalysis.classification === "GREEN";
-  }).length;
-
+  const totalFiles = workflowGraph.nodes.length;
+  const safeFiles = workflowGraph.nodes.filter(
+    (n: any) => fullAnalysis[n.id]?.classification === "GREEN",
+  ).length;
   const hasConvertedFiles = convertedCount > 0;
 
   return (
-    <div className="min-h-screen bg-[#060C1E] flex text-white relative overflow-hidden">
-      <div className="relative z-10 flex flex-1 min-w-0">
-        <aside className="w-[280px] border-r border-white/10 bg-gradient-to-b from-[#0B1227] to-[#060C1E] p-6 hidden md:block">
-          <div className="mb-8">
-            <div className="flex items-center gap-3">
-              <img src={Logo} alt="" className="h-9 w-9" />
-              <h1 className="text-xl font-secondary font-semibold">
-                Risk <span className="text-[#10B981]">Analysis Map</span>
+    <div className="h-screen bg-[#060C1E] flex flex-col overflow-hidden">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        {/* LEFT SIDEBAR - Same as map_page */}
+        <aside className="w-72 bg-[#0B1227] border-r border-white/10 p-6 flex flex-col overflow-y-auto scrollable-container">
+          <div className="flex items-center gap-3 mb-8">
+            <img src={Logo} alt="logo" className="w-12 h-12" />
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg font-bold text-white truncate font-secondary">
+                Workflow View
               </h1>
             </div>
-            <p
-              className="mt-1 text-sm text-gray-400 font-primary truncate"
-              title={repoUrl}
-            >
-              {repoUrl || "Repository"}
-            </p>
           </div>
+          <p className="mt-1 text-sm text-gray-400 font-primary mb-4">
+            Dependency closure for:{" "}
+            <strong className="text-white">{nodeId}</strong>
+          </p>
 
           <div className="space-y-3 text-sm text-white mb-8">
             <div className="flex items-center gap-3">
@@ -272,9 +280,12 @@ export default function MapPage() {
               <span className="text-gray-400">Safe to Convert</span>
               <span className="text-[#10B981]">{safeFiles}</span>
             </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">Converted</span>
+              <span className="text-[#10B981]">{convertedCount}</span>
+            </div>
           </div>
 
-          {/* ─── Target Language Dropdown ──────────────── */}
           <div className="border-t border-white/10 pt-6">
             <label className="block text-xs text-gray-400 uppercase tracking-wider mb-2">
               Target Language
@@ -290,8 +301,7 @@ export default function MapPage() {
                 setTargetLanguage(val);
                 cachedTargetLanguage = val;
               }}
-              // disabled={languageLocked}
-              className={`w-full rounded-lg border px-3 py-2 text-sm bg-[#0B1227] focus:outline-none focus:ring-2 focus:ring-[#10B981] ${"border-white/10 text-white"}`}
+              className="w-full rounded-lg border border-white/10 px-3 py-2 text-sm bg-[#0B1227] text-white focus:outline-none focus:ring-2 focus:ring-[#10B981]"
             >
               <option value="">Select…</option>
               <option value="go">Go</option>
@@ -318,7 +328,6 @@ export default function MapPage() {
             </div>
           </div>
 
-          {/* Analyzing / Converting overlay */}
           {(analyzing || converting) && (
             <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/40 backdrop-blur-sm">
               <div className="text-lg font-secondary text-[#10B981] animate-pulse">
@@ -328,33 +337,33 @@ export default function MapPage() {
           )}
 
           <div className="flex-1 h-full w-full overflow-hidden">
-            <Graph
-              graph={filteredGraph}
-              analysis={analysis}
-              onConvert={handleConfirmConvert}
-              onRequestVerdict={handleRequestVerdict}
-              verdictData={verdictData}
-              onClearVerdict={() => setVerdictData(null)}
-            />
+            {filteredGraph && (
+              <Graph
+                graph={filteredGraph}
+                analysis={fullAnalysis}
+                onConvert={handleConfirmConvert}
+                onRequestVerdict={handleRequestVerdict}
+                verdictData={verdictData}
+                onClearVerdict={() => setVerdictData(null)}
+              />
+            )}
           </div>
 
-          {/* Bottom-left buttons */}
           <div className="absolute bottom-6 left-6 flex gap-3">
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/map")}
               className="px-8 py-3 rounded-xl bg-[#10B981] text-black font-secondary hover:brightness-110 transition"
             >
-              Go Back
+              Back to Map
             </button>
             <button
               onClick={() => {
                 if (!hasConvertedFiles) return;
-                // Derive projectId from analysis the same way as the useEffect
-                const anyFP: string = Object.values(analysis).find(
+                const anyFP: string = Object.values(fullAnalysis).find(
                   (v: any) => v.filePath,
                 )
                   ? (
-                      Object.values(analysis).find(
+                      Object.values(fullAnalysis).find(
                         (v: any) => v.filePath,
                       ) as any
                     ).filePath
@@ -375,7 +384,6 @@ export default function MapPage() {
             </button>
           </div>
 
-          {/* Toast */}
           {showToast && (
             <Toast message={toastMessage} onClose={() => setShowToast(false)} />
           )}

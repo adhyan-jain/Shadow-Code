@@ -14,18 +14,29 @@ from backboard_client import (
     send_to_backboard,
     extract_verdict,
 )
-from gemini_client import convert_java_to_go, convert_java_to_kotlin
+from gemini_client import convert_java_to_go, convert_java_to_kotlin, convert_java_to_typescript
 from datetime import datetime, timezone
 
 # Load .env file if present
 from dotenv import load_dotenv
 load_dotenv()
 
-# ─── Credit-Safe Mode ────────────────────────────────────────
-# When True, all external API calls (Gemini, Backboard) are skipped
-# and replaced with deterministic placeholder responses.
-# Set to False when you have API credits and want real conversions.
-NO_CREDITS_MODE = True
+# ─── OBJECTIVE B: Independent Credit-Safe Flags ─────────────────
+# When False, the respective API will be called and consume credits.
+# When True, the respective API will be skipped and placeholder/local logic used.
+# Both flags can be independently enabled/disabled.
+
+ENABLE_GEMINI_API = not os.getenv('DISABLE_GEMINI_API', 'true').lower() in ('true', '1', 'yes')
+ENABLE_BACKBOARD_API = not os.getenv('DISABLE_BACKBOARD_API', 'true').lower() in ('true', '1', 'yes')
+
+# Legacy flag (deprecated - use individual flags above)
+NO_CREDITS_MODE = not ENABLE_GEMINI_API and not ENABLE_BACKBOARD_API
+
+print(f"🔧 API Configuration:")
+print(f"   ENABLE_GEMINI_API: {ENABLE_GEMINI_API}")
+print(f"   ENABLE_BACKBOARD_API: {ENABLE_BACKBOARD_API}")
+if not ENABLE_GEMINI_API and not ENABLE_BACKBOARD_API:
+    print(f"   ⚠️  Both APIs disabled - running in analysis-only mode")
 
 app = Flask(__name__)
 CORS(app)
@@ -41,10 +52,10 @@ def remove_readonly(func, path, excinfo):
     """Error handler for shutil.rmtree to handle read-only files on Windows."""
     os.chmod(path, stat.S_IWRITE)
     func(path)
-# ─── Placeholder Generators (NO_CREDITS_MODE) ────────────────
+# ─── Placeholder Generators (API Disabled) ──────────────────
 
 def _placeholder_go(source_code, file_path):
-    """Return a realistic placeholder Go file when credits are disabled."""
+    """Return a realistic placeholder Go file when Gemini API is disabled."""
     class_name = os.path.basename(file_path).replace('.java', '')
     return (
         f"package main\n\n"
@@ -62,7 +73,7 @@ def _placeholder_go(source_code, file_path):
 
 
 def _placeholder_kotlin(source_code, file_path):
-    """Return a realistic placeholder Kotlin file when credits are disabled."""
+    """Return a realistic placeholder Kotlin file when Gemini API is disabled."""
     class_name = os.path.basename(file_path).replace('.java', '')
     return (
         f"// AUTO-GENERATED PLACEHOLDER (credit-safe mode)\n"
@@ -75,28 +86,113 @@ def _placeholder_kotlin(source_code, file_path):
     )
 
 
+def _placeholder_typescript(source_code, file_path):
+    """Return a realistic placeholder TypeScript file when Gemini API is disabled."""
+    class_name = os.path.basename(file_path).replace('.java', '')
+    return (
+        f"// AUTO-GENERATED PLACEHOLDER (credit-safe mode)\n"
+        f"// Original: {file_path}\n\n"
+        f"/**\n * {class_name} — TypeScript equivalent of the Java class.\n */\n"
+        f"export class {class_name} {{\n"
+        f"    // TODO: translate fields and methods from Java source\n\n"
+        f"    toString(): string {{\n"
+        f"        return `{class_name}()`;\n"
+        f"    }}\n"
+        f"}}\n"
+    )
+
+
 def _placeholder_backboard_verdict(node_id, node_analysis):
-    """Return a deterministic Backboard verdict when credits are disabled."""
+    """Generate a smart, contextual migration suggestion based on actual file metrics."""
     classification = node_analysis.get('classification', 'UNKNOWN')
     risk = node_analysis.get('riskScore', 50)
-    if classification == 'GREEN' and risk < 40:
-        verdict = 'YES'
+    convertibility = node_analysis.get('convertibilityScore', 50)
+    m = node_analysis.get('metrics', {})
+
+    fan_in = m.get('fanIn', 0)
+    fan_out = m.get('fanOut', 0)
+    line_count = m.get('lineCount', 0)
+    method_count = m.get('methodCount', 0)
+    in_cycle = m.get('inCycle', False)
+    uses_threading = m.get('usesThreading', False)
+    uses_reflection = m.get('usesReflection', False)
+    reads_db = m.get('readsFromDb', False)
+    writes_db = m.get('writesToDb', False)
+    has_inheritance = m.get('hasInheritance', False)
+    uses_generics = m.get('usesGenerics', False)
+    throws_exceptions = m.get('throwsExceptions', False)
+    blast = node_analysis.get('blastRadius', {}).get('percentage', 0)
+
+    # Build specific warnings
+    warnings = []
+    if in_cycle:
+        warnings.append("part of a circular dependency")
+    if uses_threading:
+        warnings.append("uses threading/concurrency")
+    if uses_reflection:
+        warnings.append("uses reflection")
+    if reads_db or writes_db:
+        warnings.append("has database access")
+    if fan_in >= 5:
+        warnings.append(f"{fan_in} files depend on it")
+    if blast >= 10:
+        warnings.append(f"blast radius affects {blast:.0f}% of codebase")
+
+    # Determine verdict + generate human-readable suggestion
+    if classification == 'GREEN' and risk < 30 and not warnings:
+        verdict = 'SAFE'
         reasoning = (
-            f'[CREDIT-SAFE MODE] Node {node_id} is classified GREEN with risk score {risk}/100. '
-            f'Low complexity and minimal dependencies suggest safe conversion.'
+            f"Low risk ({risk}/100), {line_count} lines, {method_count} methods. "
+            f"Simple file with no risky patterns — safe to convert directly."
+        )
+    elif classification == 'GREEN' and risk < 40:
+        verdict = 'SAFE'
+        detail = f" Note: {', '.join(warnings)}." if warnings else ""
+        reasoning = (
+            f"Low risk ({risk}/100) with {convertibility}% convertibility.{detail} "
+            f"Should convert cleanly — verify tests afterward."
         )
     elif classification == 'RED' or risk >= 70:
-        verdict = 'NO'
-        reasoning = (
-            f'[CREDIT-SAFE MODE] Node {node_id} is classified {classification} with risk score {risk}/100. '
-            f'High risk — manual review strongly recommended before conversion.'
-        )
+        verdict = 'RISKY'
+        if warnings:
+            reasoning = (
+                f"High risk ({risk}/100) — {', '.join(warnings)}. "
+                f"Manual review recommended before converting; changes here could break dependents."
+            )
+        else:
+            reasoning = (
+                f"High risk ({risk}/100) with {line_count} lines and complexity score {node_analysis.get('complexityScore', '?')}. "
+                f"Consider breaking this file into smaller units before converting."
+            )
     else:
-        verdict = 'MAYBE'
-        reasoning = (
-            f'[CREDIT-SAFE MODE] Node {node_id} is classified {classification} with risk score {risk}/100. '
-            f'Moderate risk — review dependencies and test coverage before proceeding.'
-        )
+        # YELLOW / moderate
+        verdict = 'REVIEW'
+        if fan_in >= 3 and has_inheritance:
+            reasoning = (
+                f"Moderate risk ({risk}/100) — {fan_in} dependents and uses inheritance. "
+                f"Convert carefully and ensure subclass contracts are preserved."
+            )
+        elif uses_generics and throws_exceptions:
+            reasoning = (
+                f"Moderate risk ({risk}/100) — uses generics and exception handling. "
+                f"Verify generic type mappings and error handling in the target language."
+            )
+        elif fan_out >= 5:
+            reasoning = (
+                f"Moderate risk ({risk}/100) — depends on {fan_out} other files. "
+                f"Convert its dependencies first to avoid broken imports."
+            )
+        elif warnings:
+            reasoning = (
+                f"Moderate risk ({risk}/100) — {', '.join(warnings)}. "
+                f"Review flagged patterns before converting."
+            )
+        else:
+            reasoning = (
+                f"Moderate risk ({risk}/100), {line_count} lines, {method_count} methods. "
+                f"Straightforward file but verify edge cases after conversion."
+            )
+
     return verdict, reasoning
 
 
@@ -466,7 +562,21 @@ def migrate_node():
         # Build the structured message
         message = build_backboard_message(node_id, node_analysis, graph, source_code)
 
-        # Send to Backboard
+        # Send to Backboard (or use placeholder if API disabled)
+        if not ENABLE_BACKBOARD_API:
+            print(f'💳 [BACKBOARD DISABLED] Generating local verdict for {node_id}...')
+            verdict, reasoning = _placeholder_backboard_verdict(node_id, node_analysis)
+            return jsonify({
+                'success': True,
+                'nodeId': node_id,
+                'filePath': node_analysis.get('filePath', ''),
+                'classification': node_analysis.get('classification', ''),
+                'verdict': verdict,
+                'response': reasoning,
+                'riskScore': node_analysis.get('riskScore', 0),
+                'convertibilityScore': node_analysis.get('convertibilityScore', 0),
+            })
+
         print(f'🤖 Sending node {node_id} ({node_analysis.get("filePath", "")}) to Backboard...')
         raw_response = send_to_backboard(message)
 
@@ -526,8 +636,8 @@ def migrate_batch():
         results = []
         for node_id, node_analysis in green_nodes.items():
             try:
-                if NO_CREDITS_MODE:
-                    print(f'💳 [CREDIT-SAFE] [{node_id}] Generating local verdict...')
+                if not ENABLE_BACKBOARD_API:
+                    print(f'💳 [BACKBOARD DISABLED] [{node_id}] Generating local verdict...')
                     verdict, reasoning = _placeholder_backboard_verdict(node_id, node_analysis)
                     results.append({
                         'nodeId': node_id,
@@ -569,8 +679,8 @@ def migrate_batch():
 @app.route('/api/convert-code', methods=['POST'])
 def convert_code():
     """
-    Convert a Java file to Go or Kotlin using Gemini.
-    Expects JSON body: { "nodeId": "file_0", "targetLanguage": "go" | "kotlin" }
+    Convert a Java file to Go, Kotlin, or TypeScript using Gemini.
+    Expects JSON body: { "nodeId": "file_0", "targetLanguage": "go" | "kotlin" | "typescript" }
     """
     data = request.get_json()
     if not data or 'nodeId' not in data:
@@ -579,8 +689,8 @@ def convert_code():
     node_id = data['nodeId']
     target_language = data.get('targetLanguage', 'go').lower().strip()
 
-    if target_language not in ('go', 'kotlin'):
-        return jsonify({'error': f'Unsupported target language: {target_language}. Use "go" or "kotlin".'}), 400
+    if target_language not in ('go', 'kotlin', 'typescript'):
+        return jsonify({'error': f'Unsupported target language: {target_language}. Use "go", "kotlin", or "typescript".'}), 400
 
     # Language lock enforcement
     # locked = _get_locked_language()
@@ -617,21 +727,28 @@ def convert_code():
         if target_language == 'kotlin':
             out_filename = original_name.replace('.java', '.kt')
             lang_label = 'Kotlin'
+        elif target_language == 'typescript':
+            out_filename = original_name.replace('.java', '.ts')
+            lang_label = 'TypeScript'
         else:
             out_filename = original_name.replace('.java', '.go').lower()
             lang_label = 'Go'
 
-        # Convert (or placeholder in credit-safe mode)
-        if NO_CREDITS_MODE:
-            print(f'💳 [CREDIT-SAFE] Generating placeholder {lang_label} for {file_path}')
+        # Convert (or placeholder if Gemini API disabled)
+        if not ENABLE_GEMINI_API:
+            print(f'💳 [GEMINI DISABLED] Generating placeholder {lang_label} for {file_path}')
             if target_language == 'kotlin':
                 converted_code = _placeholder_kotlin(source_code, file_path)
+            elif target_language == 'typescript':
+                converted_code = _placeholder_typescript(source_code, file_path)
             else:
                 converted_code = _placeholder_go(source_code, file_path)
         else:
             print(f'🔄 Converting {file_path} (node {node_id}) Java → {lang_label} via Gemini...')
             if target_language == 'kotlin':
                 converted_code = convert_java_to_kotlin(source_code, node_analysis, file_path)
+            elif target_language == 'typescript':
+                converted_code = convert_java_to_typescript(source_code, node_analysis, file_path)
             else:
                 converted_code = convert_java_to_go(source_code, node_analysis, file_path)
 
@@ -838,7 +955,7 @@ if __name__ == '__main__':
     print('🟢 GET  /api/convert                        — GREEN nodes only')
     print('🤖 POST /api/migrate                        — { "nodeId": "..." }')
     print('🤖 POST /api/migrate/batch                  — All GREEN nodes')
-    print('🔄 POST /api/convert-code                   — { "nodeId": "...", "targetLanguage": "go"|"kotlin" }')
+    print('🔄 POST /api/convert-code                   — { "nodeId": "...", "targetLanguage": "go"|"kotlin"|"typescript" }')
     print('📂 GET  /api/project/<id>/converted-files   — Conversion registry')
     print('📄 GET  /api/file-content?path=...           — Source file content')
     print('🔀 GET  /api/workflow/<node_id>              — Fan-in subgraph')

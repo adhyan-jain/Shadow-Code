@@ -1,4 +1,4 @@
-# Python
+# ─── Python ──────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
@@ -7,16 +7,15 @@ __pycache__/
 venv/
 env/
 ENV/
+.venv/
 *.egg-info/
 .pytest_cache/
 .mypy_cache/
 *.coverage
 .coverage.*
 htmlcov/
-server.log
-nohup.out
 
-# Node.js
+# ─── Node.js ─────────────────────────────────────────────────────
 node_modules/
 npm-debug.log*
 yarn-debug.log*
@@ -25,42 +24,32 @@ package-lock.json
 yarn.lock
 .pnpm-debug.log*
 
-# Vite
+# ─── Vite / TypeScript ───────────────────────────────────────────
 .vite/
 *.local
-
-# TypeScript
 *.tsbuildinfo
+dist/
+build/
 
-# Testing
+# ─── Testing / Linting ───────────────────────────────────────────
 coverage/
-
-# Linting
 .eslintcache
 
-# Environment variables
+# ─── Environment variables ───────────────────────────────────────
 .env
 .env.local
 .env.*.local
 
-# Build outputs
-dist/
-build/
-*.log
-
-# Java
+# ─── Java / Maven ────────────────────────────────────────────────
 *.class
 *.jar
 *.war
 *.ear
 target/
 *.iml
-.idea/
 .classpath
 .project
 .settings/
-
-# Maven
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
@@ -70,27 +59,32 @@ dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
 
-# OS files
-.DS_Store
-Thumbs.db
+# ─── IDE ──────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.sublime-*
 *.swp
 *.swo
 *~
 
-# IDE
-.vscode/
-.idea/
-*.sublime-*
+# ─── OS ──────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
 
-# Temporary files
+# ─── Logs ────────────────────────────────────────────────────────
+*.log
+server.log
+nohup.out
+
+# ─── Temporary files ─────────────────────────────────────────────
 tmp/
 temp/
 *.tmp
 
-# Storage and workspace directories
-backend/workspace/*
+# ─── Generated / runtime data ────────────────────────────────────
+ast.json
 backend/storage/*.json
 !backend/storage/.gitkeep
-
-# Generated data files
-ast.json
+backend/workspace/*
+backend/converted_files/
+backend/repos/

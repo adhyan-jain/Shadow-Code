@@ -1,38 +1,39 @@
 # Shadow-Code Parser
 
-A Java CLI tool that parses legacy Java repositories using JavaParser and outputs structured JSON for analysis.
+Java CLI tool that parses legacy Java repositories using JavaParser and outputs structured AST data as JSON.
 
 ## Overview
 
-This parser extracts Abstract Syntax Tree (AST) information from Java source files and applies heuristics to detect database operations. It's designed for the Shadow-Code hackathon project to analyze legacy codebases.
+The parser walks a Java repository, extracts Abstract Syntax Tree information from every `.java` file, and applies heuristics to detect database operations. It produces `ast.json` — the input for the Shadow-Code analysis pipeline.
 
 ## Prerequisites
 
-- Java 11 or higher
-- Maven (optional - manual build instructions provided below)
+- Java 11+
+- Maven (optional — manual build instructions below)
 
-## Building the Project
+## Build
 
-### Option 1: With Maven
+### With Maven
 
 ```bash
 mvn clean package
 ```
 
-### Option 2: Manual Build (without Maven)
+### Without Maven
 
 ```bash
-# Create directories
 mkdir -p target/classes lib
 
 # Download dependencies
-wget -O lib/javaparser-core-3.25.8.jar https://repo1.maven.org/maven2/com/github/javaparser/javaparser-core/3.25.8/javaparser-core-3.25.8.jar
-wget -O lib/gson-2.10.1.jar https://repo1.maven.org/maven2/com/google/code/gson/gson/2.10.1/gson-2.10.1.jar
+wget -O lib/javaparser-core-3.25.8.jar \
+  https://repo1.maven.org/maven2/com/github/javaparser/javaparser-core/3.25.8/javaparser-core-3.25.8.jar
+wget -O lib/gson-2.10.1.jar \
+  https://repo1.maven.org/maven2/com/google/code/gson/gson/2.10.1/gson-2.10.1.jar
 
-# Compile source files
+# Compile
 javac -cp "lib/*" -d target/classes src/main/java/com/shadowcode/parser/*.java
 
-# Extract dependency JARs
+# Bundle dependencies
 cd target/classes
 jar xf ../../lib/javaparser-core-3.25.8.jar
 jar xf ../../lib/gson-2.10.1.jar
@@ -43,42 +44,30 @@ cd ../..
 jar cfe target/parser.jar com.shadowcode.parser.ParserMain -C target/classes .
 ```
 
-## Running the Parser
-
-### Basic Usage
+## Usage
 
 ```bash
 java -jar target/parser.jar <repoPath> <outputPath>
 ```
 
-### Parameters
-
-- **`<repoPath>`** - Path to the Java repository you want to analyze
-- **`<outputPath>`** - Directory where `ast.json` will be created
+| Argument | Description |
+|---|---|
+| `repoPath` | Path to the Java repository to analyze |
+| `outputPath` | Directory where `ast.json` will be written |
 
 ### Examples
 
-**Analyze a Java project and save output to current directory:**
-
 ```bash
+# Analyze a local project
 java -jar target/parser.jar /path/to/java/project .
-```
 
-**Analyze with specific output location:**
-
-```bash
-java -jar target/parser.jar ~/projects/legacy-app ~/analysis-results
-```
-
-**Test with the parser itself:**
-
-```bash
-java -jar target/parser.jar ./src/main/java ./output
+# Analyze the bundled sample repo
+java -jar target/parser.jar ../repos/jpetstore-6/src ../
 ```
 
 ## Output Format
 
-The tool generates `ast.json` with the following structure:
+`ast.json`:
 
 ```json
 {
@@ -99,39 +88,16 @@ The tool generates `ast.json` with the following structure:
 
 ## What Gets Extracted
 
-For each `.java` file, the parser extracts:
-
-- **File path** - Absolute path to the source file
-- **Package name** - Java package declaration
-- **Imports** - All imported classes and packages
-- **Class names** - All class and interface declarations
-- **Method names** - All methods, qualified with class name (e.g., `ClassName.methodName`)
-- **Method calls** - Unique list of method calls found in the file
-- **DB operations** - Heuristic-based detection of database reads/writes
-
-## Database Detection Heuristics
-
-### Write Operations
-
-Detected if method names or calls contain:
-
-- `save`, `update`, `delete`, `insert`
-- `persist`, `create`, `remove`
-
-### Read Operations
-
-Detected if method names or calls contain:
-
-- `find`, `get`, `select`, `query`
-- `fetch`, `read`, `load`, `retrieve`
-
-## Features
-
-✅ Recursive directory scanning  
-✅ Ignores build folders (`target/`, `build/`, `.git/`, `.idea/`)  
-✅ Graceful error handling (skips unparseable files)  
-✅ Pretty-printed JSON output  
-✅ No dependencies on runtime servers or frameworks
+| Field | Description |
+|---|---|
+| `filePath` | Absolute path to the source file |
+| `packageName` | Java package declaration |
+| `imports` | All imported classes and packages |
+| `classNames` | All class and interface declarations |
+| `methodNames` | All methods, qualified as `ClassName.methodName` |
+| `methodCalls` | Unique method calls found in the file |
+| `readsFromDb` | Heuristic: calls containing `find`, `get`, `select`, `query`, `fetch`, `read`, `load`, `retrieve` |
+| `writesToDb` | Heuristic: calls containing `save`, `update`, `delete`, `insert`, `persist`, `create`, `remove` |
 
 ## File Structure
 
@@ -139,55 +105,23 @@ Detected if method names or calls contain:
 parser/
 ├── src/main/java/com/shadowcode/parser/
 │   ├── ParserMain.java      # CLI entry point
-│   ├── FileWalker.java      # Finds .java files recursively
-│   ├── AstExtractor.java    # Extracts AST using JavaParser
-│   ├── FileNode.java        # Model for a single file's data
-│   └── AstModel.java        # Top-level model for JSON output
-├── pom.xml                  # Maven build configuration
-├── lib/                     # Downloaded JAR dependencies
-├── target/
-│   ├── classes/             # Compiled .class files
-│   └── parser.jar           # Executable JAR
+│   ├── FileWalker.java      # Recursive .java file finder
+│   ├── AstExtractor.java    # AST extraction via JavaParser
+│   ├── FileNode.java        # Per-file data model
+│   └── AstModel.java        # Top-level JSON output model
+├── pom.xml                  # Maven configuration
 └── README.md
 ```
 
 ## Limitations
 
-- Only parses Java files (`.java` extension)
-- Skips files that fail parsing (continues processing)
-- Database detection is heuristic-based (not definitive)
-- Does not perform symbol resolution or type checking
-- Does not analyze bytecode or JAR files
-
-## Troubleshooting
-
-**"Command not found: mvn"**
-
-- Use the manual build instructions above
-
-**"No Java files found"**
-
-- Verify the repository path is correct
-- Check that `.java` files aren't in ignored directories
-
-**"Failed to parse file"**
-
-- The file may have syntax errors
-- Parser continues with remaining files
-
-**"Error writing output file"**
-
-- Verify output directory exists and is writable
-- Check disk space availability
+- Java files only (`.java` extension)
+- Skips unparseable files gracefully
+- Database detection is heuristic-based (method name patterns)
+- No symbol resolution or type checking
+- No bytecode / JAR analysis
+- Ignores `target/`, `build/`, `.git/`, `.idea/` directories
 
 ## License
 
-Hackathon project - MIT License
-
-## Contributing
-
-This is a hackathon project. Feel free to fork and enhance!
-
----
-
-**Shadow-Code Team** | Hackathon 2026
+MIT

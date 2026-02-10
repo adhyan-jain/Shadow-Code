@@ -111,7 +111,7 @@ export default function Comparison() {
           <img src={logo} alt="logo" className="w-8 h-8" />
         </div>
 
-        <div className="text-sm font-mono text-white/70 space-y-1 overflow-y-auto flex-1">
+        <div className="text-sm font-mono text-white/70 space-y-1 overflow-y-auto flex-1 scrollable-container">
           {loading ? (
             <p className="text-white/40 text-xs">Loading…</p>
           ) : conversions.length === 0 ? (

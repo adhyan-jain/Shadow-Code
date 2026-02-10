@@ -84,11 +84,11 @@ export interface ConvertCodeResult {
 }
 
 /**
- * Convert a Java file to Go or Kotlin
+ * Convert a Java file to Go, Kotlin, or TypeScript
  */
 export async function convertCode(
   nodeId: string,
-  targetLanguage: "go" | "kotlin" = "go",
+  targetLanguage: "go" | "kotlin" | "typescript" = "go",
   projectId?: string,
 ): Promise<ConvertCodeResult> {
   const response = await fetch(`${API_BASE_URL}/convert-code`, {
@@ -109,9 +109,7 @@ export async function convertCode(
 /**
  * Fetch converted files for a project
  */
-export async function getConvertedFiles(
-  projectId: string,
-): Promise<{
+export async function getConvertedFiles(projectId: string): Promise<{
   success: boolean;
   projectId: string;
   conversions: any[];
@@ -124,6 +122,36 @@ export async function getConvertedFiles(
   if (!response.ok) {
     throw new Error(data.error || "Failed to fetch converted files");
   }
+  return data;
+}
+
+export interface MigrateResult {
+  success: boolean;
+  nodeId: string;
+  filePath: string;
+  classification: string;
+  verdict: string;
+  response: string;
+  riskScore: number;
+  convertibilityScore: number;
+}
+
+/**
+ * Send a node to Backboard for migration verdict (risk assessment)
+ */
+export async function migrateNode(nodeId: string): Promise<MigrateResult> {
+  const response = await fetch(`${API_BASE_URL}/migrate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nodeId, includeSource: true }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Migration assessment failed");
+  }
+
   return data;
 }
 

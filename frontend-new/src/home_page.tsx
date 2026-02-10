@@ -61,9 +61,9 @@ export default function HomePage() {
           />
         </div>
 
-        <div className="flex gap-2 justify-center">
-          <h1 className="md:text-2xl lg:text-6xl text-white">CODE</h1>
-          <h1 className="md:text-2xl lg:text-6xl text-[#10B981]">CONVERTOR</h1>
+        <div className="flex justify-center">
+          <h1 className="md:text-2xl lg:text-6xl text-white">Shadow</h1>
+          <h1 className="md:text-2xl lg:text-6xl text-[#10B981]">Code</h1>
         </div>
 
         <div className="flex justify-center">
