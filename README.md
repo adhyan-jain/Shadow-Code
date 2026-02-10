@@ -2,6 +2,8 @@
 
 **Analyze. Visualize. Migrate.**
 
+Deployed Version: https://shadow-code-delta.vercel.app
+
 Shadow-Code is a Java migration intelligence platform that parses repositories, builds dependency graphs, performs risk analysis, and converts source files to Go, Kotlin, or TypeScript — powered by Gemini AI and Backboard.io risk assessment.
 
 ---
